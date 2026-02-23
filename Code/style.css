@@ -1,0 +1,85 @@
+/* === PHẦN CSS (Gom từ style.css vào đây) === */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.navbar {
+  height: 60px;
+  background-color: #2e7d32;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  position: relative;
+}
+.navbar-brand {
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: white;
+  border: 2px solid #ffffff;
+}
+.navbar-menu a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+.navbar-menu a:hover {
+  background-color: #1b5e20;
+}
+
+/* Đảm bảo bản đồ chiếm phần còn lại của màn hình */
+#map {
+  height: calc(100vh - 60px);
+  width: 100%;
+}
+
+.info-popup {
+  min-width: 220px;
+  font-size: 14px;
+}
+.info-popup h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #2e7d32;
+  border-bottom: 2px solid #4caf50;
+  padding-bottom: 5px;
+  font-size: 16px;
+}
+.info-popup p {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+.info-popup b {
+  color: #333;
+}
+.loading-text {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 10px;
+}
