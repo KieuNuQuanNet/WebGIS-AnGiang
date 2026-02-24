@@ -1,3 +1,4 @@
+/* === PHẦN CSS (Gom từ style.css vào đây) === */
 * {
   box-sizing: border-box;
 }
@@ -51,6 +52,7 @@ body {
   background-color: #1b5e20;
 }
 
+/* Đảm bảo bản đồ chiếm phần còn lại của màn hình */
 #map {
   height: calc(100vh - 60px);
   width: 100%;
@@ -75,17 +77,18 @@ body {
 .info-popup b {
   color: #333;
 }
-
+/* --- Khu vực Nút Thêm Tài Nguyên --- */
 .add-resource-container {
   position: absolute;
-  top: 150px;
-  left: 10px;
+  top: 150px; /* Hạ thấp xuống để né Navbar và né luôn nút Zoom */
+  left: 10px; /* Dời sang mép bên trái cho cùng cột với nút Zoom */
   z-index: 1000;
   font-family: Arial, sans-serif;
 }
 
+/* Trang trí nút bấm */
 .add-btn {
-  background-color: #27ae60;
+  background-color: #27ae60; /* Màu xanh lá cây chuẩn hệ Sinh thái */
   color: white;
   border: none;
   padding: 10px 16px;
@@ -93,14 +96,15 @@ body {
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Đổ bóng 3D */
   transition: background-color 0.3s;
 }
 
 .add-btn:hover {
-  background-color: #219150;
+  background-color: #219150; /* Đổi màu nhẹ khi rê chuột vào */
 }
 
+/* Trang trí bảng danh sách tài nguyên */
 .resource-list {
   background-color: white;
   margin-top: 10px;
@@ -121,7 +125,7 @@ body {
 }
 
 .resource-list ul {
-  list-style-type: none;
+  list-style-type: none; /* Xóa dấu chấm tròn của thẻ li */
   padding: 0;
   margin: 0;
 }
@@ -136,14 +140,17 @@ body {
 }
 
 .resource-list li:hover {
-  background-color: #e8f8f5;
+  background-color: #e8f8f5; /* Sáng lên khi rê chuột vào từng mục */
   color: #27ae60;
 }
 
+/* Thần chú tàng hình: Dùng để giấu danh sách đi */
 .hidden {
   display: none;
 }
-
+/* =========================================
+   GIAO DIỆN FORM NHẬP LIỆU WFS-T TRÊN BẢN ĐỒ
+   ========================================= */
 .wfs-form-container {
   width: 280px;
   font-family: Arial, sans-serif;
@@ -174,7 +181,7 @@ body {
   padding: 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Giúp padding không làm tràn khung */
 }
 
 .wfs-input:focus {
@@ -182,6 +189,7 @@ body {
   outline: none;
 }
 
+/* Hàng chia 2 cột cho Trữ lượng & Diện tích */
 .wfs-flex-row {
   display: flex;
   gap: 12px;
@@ -192,6 +200,7 @@ body {
   flex: 1;
 }
 
+/* Nhóm nút bấm */
 .wfs-button-group {
   display: flex;
   gap: 10px;

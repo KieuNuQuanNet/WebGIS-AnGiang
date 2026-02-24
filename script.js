@@ -18,8 +18,11 @@ var googleSatLayer = L.tileLayer(
   },
 );
 
-
-var urlWMS = "http://14.225.210.50:8080/geoserver/angiang/wms";
+// =====================================================================
+// PHẦN 2: KHAI BÁO LỚP DỮ LIỆU WMS TỪ MÁY CHỦ VPS
+// =====================================================================
+// Đã thay đổi localhost thành IP VPS và cập nhật Workspace thành 'angiang'
+var urlWMS = "/myproxy/angiang/wms";
 
 var rung = L.tileLayer.wms(urlWMS, {
   layers: "angiang:rung",
@@ -58,12 +61,14 @@ var thucvat = L.tileLayer.wms(urlWMS, {
   transparent: true,
   version: "1.1.0",
 });
-
+// =====================================================================
+// PHẦN 3: KHỞI TẠO BẢN ĐỒ VÀ THIẾT LẬP GÓC NHÌN
+// =====================================================================
 
 var map = L.map("map", {
   center: [10.3711, 105.4328],
   zoom: 11,
-  layers: [osmLayer], 
+  layers: [osmLayer], // Load sẵn nền OSM
 });
 
 var marker = L.marker([10.3711, 105.4328]).addTo(map);
@@ -73,6 +78,9 @@ marker
   )
   .openPopup();
 
+// =====================================================================
+// PHẦN 4: TẠO BỘ ĐIỀU KHIỂN CHUYỂN ĐỔI BẢN ĐỒ (LAYER CONTROL)
+// =====================================================================
 
 var baseMaps = {
   "Bản đồ Đường phố (OSM)": osmLayer,
@@ -90,6 +98,11 @@ var overlayMaps = {
 
 L.control.layers(baseMaps, overlayMaps).addTo(map);
 
+// =====================================================================
+// GIAI ĐOẠN 2: CLICK LẤY THÔNG TIN TỪ VPS (WFS GETFEATURE)
+// =====================================================================
+// Đã xóa phần code trùng lặp và đồng bộ lại IP VPS
+
 map.on("click", function (e) {
   var tolerance = 0.001;
   var minx = e.latlng.lng - tolerance;
@@ -99,7 +112,7 @@ map.on("click", function (e) {
 
   var promises = [];
   var urlWFS =
-    "http://14.225.210.50:8080/geoserver/angiang/ows?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsName=EPSG:4326&bbox=" +
+    "/myproxy/angiang/ows?service=WFS&version=1.1.0&request=GetFeature&outputFormat=application/json&srsName=EPSG:4326&bbox=" +
     minx +
     "," +
     miny +
@@ -275,53 +288,67 @@ map.on("click", function (e) {
     });
   }
 });
-
+// Tìm đến nút bấm và danh sách vừa tạo bằng HTML
 const btnThemTaiNguyen = document.getElementById("btnThemTaiNguyen");
 const danhSachTaiNguyen = document.getElementById("danhSachTaiNguyen");
 
-// Hễ có người click vào nút thì lật ngược trạng thái ẩn/hiện của danh sách
+// Gắn sự kiện: Hễ có người click vào nút thì lật ngược trạng thái ẩn/hiện của danh sách
 btnThemTaiNguyen.addEventListener("click", function () {
   danhSachTaiNguyen.classList.toggle("hidden");
 });
 // Khai báo biến toàn cục để nhớ xem người dùng đang muốn vẽ tài nguyên gì
 var taiNguyenDangChon = "";
 
+// Lấy toàn bộ các mục trong danh sách tài nguyên
 const cacLoaiTaiNguyen = document.querySelectorAll(".resource-item");
 const menuTaiNguyen = document.getElementById("danhSachTaiNguyen");
 
+// Gắn sự kiện click cho từng mục trong danh sách
 cacLoaiTaiNguyen.forEach(function (item) {
   item.addEventListener("click", function () {
-
+    // 1. Đọc "thẻ bài" xem mục này yêu cầu vẽ hình gì và tên là gì
     const loaiHinh = this.getAttribute("data-loai");
     taiNguyenDangChon = this.getAttribute("data-ten");
 
+    // 2. Giấu cái menu đi cho bản đồ thoáng đãng dễ vẽ
     menuTaiNguyen.classList.add("hidden");
 
+    // 3. Triệu hồi công cụ vẽ tương ứng của Leaflet.draw
     if (loaiHinh === "polygon") {
-      new L.Draw.Polygon(map).enable(); 
+      new L.Draw.Polygon(map).enable(); // Bật bút vẽ mảng (Rừng, Đất)
     } else if (loaiHinh === "polyline") {
-      new L.Draw.Polyline(map).enable();
+      new L.Draw.Polyline(map).enable(); // Bật bút kẻ đường kẻ chỉ (Sông, Kênh)
     } else if (loaiHinh === "point") {
-      new L.Draw.Marker(map).enable(); 
+      new L.Draw.Marker(map).enable(); // Lấy đinh ghim ra chấm điểm (Khoáng sản)
     }
+
+    // Báo hiệu cho người dùng biết để bắt đầu thao tác
     alert("chọn vị trí trên bản đồ để vẽ/chấm điểm cho: " + taiNguyenDangChon);
   });
 });
-
+// 1. Tạo một "khay chứa" (FeatureGroup) để lưu giữ các hình Dao friend sắp vẽ
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+// 2. Lắng nghe khoảnh khắc Dao friend hoàn thành nét vẽ
+// (Nhả chuột chấm điểm, hoặc click đúp để kết thúc vẽ mảng/đường)
+// ==========================================
+// TẠO FORM VÀ XỬ LÝ SỰ KIỆN VẼ XONG
+// ==========================================
 map.on("draw:created", function (e) {
   var type = e.layerType;
   var layer = e.layer;
   drawnItems.addLayer(layer);
 
+  // ------------------------------------------
   // 1. NHÁNH VẼ ĐIỂM (MỎ KHOÁNG SẢN)
-
+  // ------------------------------------------
   if (type === "marker") {
     var toaDo = layer.getLatLng();
 
+    // ==========================================
     // 1.1: KHI CHẤM MỎ KHOÁNG SẢN
+    // ==========================================
     if (taiNguyenDangChon === "Mỏ khoáng sản") {
       var formDiv = document.createElement("div");
       formDiv.className = "wfs-form-container";
@@ -396,9 +423,9 @@ map.on("draw:created", function (e) {
         });
     }
 
-
+    // ==========================================
     // 1.2: KHI CHẤM ĐỘNG VẬT HOẶC THỰC VẬT
- 
+    // ==========================================
     else if (
       taiNguyenDangChon === "Tài nguyên Động vật" ||
       taiNguyenDangChon === "Tài nguyên Thực vật"
@@ -474,19 +501,21 @@ map.on("draw:created", function (e) {
         });
     }
   } else if (type === "polygon") {
-
+    // Nếu chọn vẽ Rừng
+    // Nếu chọn vẽ Rừng
     if (taiNguyenDangChon === "Tài nguyên Rừng") {
-
+      // 🌟 Tuyệt kỹ khép kín chuỗi tọa độ Đa giác
       var latlngs = layer.getLatLngs()[0];
       var chuoiToaDo = "";
       for (var i = 0; i < latlngs.length; i++) {
         chuoiToaDo += latlngs[i].lng + "," + latlngs[i].lat + " ";
       }
-      chuoiToaDo += latlngs[0].lng + "," + latlngs[0].lat; 
+      chuoiToaDo += latlngs[0].lng + "," + latlngs[0].lat; // Khép kín vòng
 
       var formDivRung = document.createElement("div");
       formDivRung.className = "wfs-form-container";
 
+      // 🌟 ĐÃ XÓA ĐỊA CHỈ & ĐỐI TƯỢNG BẢO VỆ, THÊM NHÓM RỪNG
       formDivRung.innerHTML = `
         <h4 class="wfs-form-header" style="color: #2e7d32; border-color: #2e7d32;">THÊM TÀI NGUYÊN RỪNG</h4>
         <div class="wfs-form-group"><label>Tên rừng:</label><input type="text" id="inpTenRung" class="wfs-input" placeholder="Nhập tên rừng..."></div>
@@ -534,10 +563,11 @@ map.on("draw:created", function (e) {
             return;
           }
 
+          // 🌟 GIÁP BẢO VỆ CHỐNG RỖNG DỮ LIỆU
+          if (!nhom) nhom = "Chưa xác định"; // Nếu để trống nhóm, tự điền chữ này
+          if (!dienTich || dienTich === "") dienTich = 0; // Nếu bỏ trống diện tích, tự ép về số 0
 
-          if (!nhom) nhom = "Chưa xác định"; 
-          if (!dienTich || dienTich === "") dienTich = 0; 
-
+          // Truyền 6 tham số
           phongDuLieuRungLenGeoServer(
             chuoiToaDo,
             ten,
@@ -549,16 +579,18 @@ map.on("draw:created", function (e) {
           map.closePopup();
         });
     } else if (taiNguyenDangChon === "Tài nguyên Đất") {
+      // 🌟 Tuyệt kỹ khép kín chuỗi tọa độ Đa giác
       var latlngs = layer.getLatLngs()[0];
       var chuoiToaDo = "";
       for (var i = 0; i < latlngs.length; i++) {
         chuoiToaDo += latlngs[i].lng + "," + latlngs[i].lat + " ";
       }
-      chuoiToaDo += latlngs[0].lng + "," + latlngs[0].lat; 
+      chuoiToaDo += latlngs[0].lng + "," + latlngs[0].lat; // Khép kín vòng
 
       var formDivDat = document.createElement("div");
       formDivDat.className = "wfs-form-container";
 
+      // 🌟 FORM ĐÃ ĐƯỢC CHUẨN HÓA THEO DATABASE THỰC TẾ
       formDivDat.innerHTML = `
         <h4 class="wfs-form-header" style="color: #795548; border-color: #795548;">THÊM TÀI NGUYÊN ĐẤT</h4>
         <div class="wfs-form-group"><label>Tên đất / Chủ sử dụng:</label><input type="text" id="TenDat" class="wfs-input" placeholder="Nhập tên đất..."></div>
@@ -614,6 +646,7 @@ map.on("draw:created", function (e) {
             return;
           }
 
+          // Gọi hàm truyền ĐÚNG 6 tham số cần thiết
           phongDuLieuDatLenGeoServer(
             chuoiToaDo,
             ten,
@@ -626,17 +659,20 @@ map.on("draw:created", function (e) {
         });
     }
   } else if (type === "polyline") {
+    // Nếu chọn vẽ Nước
     if (taiNguyenDangChon === "Tài nguyên Nước") {
+      // 🌟 Tuyệt kỹ lấy tọa độ Đường kẻ (Polyline) - KHÔNG CẦN KHÉP KÍN
       var latlngs = layer.getLatLngs();
       var chuoiToaDo = "";
       for (var i = 0; i < latlngs.length; i++) {
         chuoiToaDo += latlngs[i].lng + "," + latlngs[i].lat + " ";
       }
-      chuoiToaDo = chuoiToaDo.trim();
+      chuoiToaDo = chuoiToaDo.trim(); // Cắt gọt khoảng trắng thừa ở cuối
 
       var formDivNuoc = document.createElement("div");
       formDivNuoc.className = "wfs-form-container";
 
+      // 🌟 GIAO DIỆN KHỚP VỚI CÁC CỘT VÀ ENUM ĐẠO HỮU VỪA ĐƯA
       formDivNuoc.innerHTML = `
         <h4 class="wfs-form-header" style="color: #03a9f4; border-color: #03a9f4;">THÊM TÀI NGUYÊN NƯỚC</h4>
         <div class="wfs-form-group"><label>Tên sông/kênh:</label><input type="text" id="inpTenNuoc" class="wfs-input" placeholder="Nhập tên..."></div>
@@ -679,14 +715,19 @@ map.on("draw:created", function (e) {
             alert("Kiếp nạn! Tên sông/kênh không được để trống!");
             return;
           }
+
+          // Gọi hàm phóng dữ liệu hệ Thủy
           phongDuLieuNuocLenGeoServer(chuoiToaDo, ten, loai, cap);
           map.closePopup();
         });
     }
   }
 });
+// ==========================================
+// PHẦN 3: TUYỆT KỸ WFS-T GỬI LÊN GEOSERVER
+// ==========================================
 
-// 1: Gửi Khoáng sản
+// --- 3.1: Gửi Khoáng sản (Point) ---
 function phongDuLieuLenGeoServer(
   kinhDo,
   viDo,
@@ -740,7 +781,7 @@ function phongDuLieuLenGeoServer(
     });
 }
 
-//2: Gửi Rừng
+// --- 3.2: Gửi Rừng (Polygon) ---
 function phongDuLieuRungLenGeoServer(
   chuoiToaDo,
   ten,
@@ -790,7 +831,7 @@ function phongDuLieuRungLenGeoServer(
       }
     });
 }
-//3: Gửi Đất
+// --- 3.3: Gửi Đất (MultiPolygon) ---
 function phongDuLieuDatLenGeoServer(
   chuoiToaDo,
   ten,
@@ -803,6 +844,7 @@ function phongDuLieuDatLenGeoServer(
   const LAYER_NAME = "dat";
   const GEOM_COLUMN = "geom";
 
+  // 🌟 TUYỆT KỸ ÉP DẸP: Gom toàn bộ GML thành 1 dòng duy nhất, không khoảng trắng!
   const geomXml = `<${WORKSPACE}:${GEOM_COLUMN}><gml:MultiPolygon srsName="EPSG:4326"><gml:polygonMember><gml:Polygon><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>${chuoiToaDo}</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></gml:polygonMember></gml:MultiPolygon></${WORKSPACE}:${GEOM_COLUMN}>`;
 
   const wfsTransaction = `
@@ -839,12 +881,13 @@ function phongDuLieuDatLenGeoServer(
       }
     });
 }
-//4: Gửi Nước
+// --- 3.4: Gửi Nước (MultiLineString) - ÉP CHÂN KHÔNG CHỐNG LỖI STRING ---
 function phongDuLieuNuocLenGeoServer(chuoiToaDo, ten, loai, cap) {
   const WORKSPACE = "angiang";
   const LAYER_NAME = "waterways";
   const GEOM_COLUMN = "geom";
 
+  // 🌟 TUYỆT KỸ ÉP DẸP: Chuyển sang MultiLineString cho khớp Database
   const geomXml = `<${WORKSPACE}:${GEOM_COLUMN}><gml:MultiLineString srsName="EPSG:4326"><gml:lineStringMember><gml:LineString><gml:coordinates>${chuoiToaDo}</gml:coordinates></gml:LineString></gml:lineStringMember></gml:MultiLineString></${WORKSPACE}:${GEOM_COLUMN}>`;
 
   const wfsTransaction = `
@@ -892,6 +935,7 @@ function phongDuLieuSinhVatLenGeoServer(
   const WORKSPACE = "angiang";
   const GEOM_COLUMN = "geom";
 
+  // 🌟 TRỞ VỀ CHUẨN ĐIỂM (POINT) VÌ GƯƠNG CHIẾU YÊU ĐÃ XÁC NHẬN!
   const geomXml = `<${WORKSPACE}:${GEOM_COLUMN}><gml:Point srsName="EPSG:4326"><gml:coordinates>${kinhDo},${viDo}</gml:coordinates></gml:Point></${WORKSPACE}:${GEOM_COLUMN}>`;
 
   const wfsTransaction = `
