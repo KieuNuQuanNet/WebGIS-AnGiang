@@ -1,4 +1,3 @@
-/* === PHẦN CSS (Gom từ style.css vào đây) === */
 * {
   box-sizing: border-box;
 }
@@ -52,7 +51,6 @@ body {
   background-color: #1b5e20;
 }
 
-/* Đảm bảo bản đồ chiếm phần còn lại của màn hình */
 #map {
   height: calc(100vh - 60px);
   width: 100%;
@@ -77,9 +75,150 @@ body {
 .info-popup b {
   color: #333;
 }
-.loading-text {
-  color: #666;
-  font-style: italic;
+
+.add-resource-container {
+  position: absolute;
+  top: 150px;
+  left: 10px;
+  z-index: 1000;
+  font-family: Arial, sans-serif;
+}
+
+.add-btn {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s;
+}
+
+.add-btn:hover {
+  background-color: #219150;
+}
+
+.resource-list {
+  background-color: white;
+  margin-top: 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  overflow: hidden;
+}
+
+.resource-list h4 {
+  margin: 0;
+  padding: 12px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
   text-align: center;
-  padding: 10px;
+}
+
+.resource-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.resource-list li {
+  padding: 12px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #f1f1f1;
+  transition: background-color 0.2s;
+}
+
+.resource-list li:hover {
+  background-color: #e8f8f5;
+  color: #27ae60;
+}
+
+.hidden {
+  display: none;
+}
+
+.wfs-form-container {
+  width: 280px;
+  font-family: Arial, sans-serif;
+}
+
+.wfs-form-header {
+  text-align: center;
+  color: #4caf50;
+  margin-top: 0;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #4caf50;
+}
+
+.wfs-form-group {
+  margin-bottom: 10px;
+}
+
+.wfs-form-group label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.wfs-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.wfs-input:focus {
+  border-color: #4caf50;
+  outline: none;
+}
+
+.wfs-flex-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.wfs-flex-col {
+  flex: 1;
+}
+
+.wfs-button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.wfs-btn {
+  flex: 1;
+  color: white;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.wfs-btn-cancel {
+  background-color: #f44336;
+}
+.wfs-btn-cancel:hover {
+  background-color: #d32f2f;
+}
+
+.wfs-btn-save {
+  background-color: #4caf50;
+}
+.wfs-btn-save:hover {
+  background-color: #388e3c;
 }

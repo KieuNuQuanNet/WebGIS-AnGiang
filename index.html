@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebGIS An Giang - Đa nền tảng bản đồ</title>
 
-    <!-- Leaflet CSS -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
-    <!-- CSS của bạn -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -27,11 +33,59 @@
       </div>
     </nav>
     <div id="map"></div>
+    <div class="add-resource-container">
+      <button id="btnThemTaiNguyen" class="add-btn">
+        <span>+</span>
+      </button>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <div id="danhSachTaiNguyen" class="resource-list hidden">
+        <h4>Chọn loại cần thêm:</h4>
+        <ul id="danhSachLoaiTaiNguyen">
+          <li
+            class="resource-item"
+            data-loai="polygon"
+            data-ten="Tài nguyên Rừng"
+          >
+            🌳 Tài nguyên Rừng
+          </li>
 
-    <!-- JS của bạn -->
-    <script src="scipt.js"></script>
+          <li
+            class="resource-item"
+            data-loai="polygon"
+            data-ten="Tài nguyên Đất"
+          >
+            🟤 Tài nguyên Đất
+          </li>
+
+          <li
+            class="resource-item"
+            data-loai="polyline"
+            data-ten="Tài nguyên Nước"
+          >
+            💧 Tài nguyên Nước
+          </li>
+
+          <li class="resource-item" data-loai="point" data-ten="Mỏ khoáng sản">
+            ⛏️ Mỏ khoáng sản
+          </li>
+          <li
+            class="resource-item"
+            data-loai="point"
+            data-ten="Tài nguyên Động vật"
+          >
+            🐅 Tài nguyên Động vật
+          </li>
+
+          <li
+            class="resource-item"
+            data-loai="point"
+            data-ten="Tài nguyên Thực vật"
+          >
+            🌿 Tài nguyên Thực vật
+          </li>
+        </ul>
+      </div>
+    </div>
+    <script src="script.js"></script>
   </body>
 </html>
