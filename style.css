@@ -52,12 +52,106 @@ body {
   background-color: #1b5e20;
 }
 
-/* Đảm bảo bản đồ chiếm phần còn lại của màn hình */
+/* =========================================
+   GIAO DIỆN TÌM KIẾM
+   ========================================= */
+.navbar-search {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding: 0 15px;
+}
+
+.search-group {
+  display: flex;
+  width: 100%;
+  max-width: 300px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  align-items: center;
+}
+.search-group:focus-within {
+  background: white;
+  border-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+#inpSearch {
+  background: transparent !important;
+  border: none !important;
+  color: white;
+  padding: 6px 5px;
+  width: 100%;
+  outline: none !important;
+  font-size: 14px;
+}
+.search-group:focus-within #inpSearch {
+  color: #333 !important;
+}
+#inpSearch::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+.search-group:focus-within #inpSearch::placeholder {
+  color: #888;
+}
+#btnSearch {
+  background: transparent !important;
+  border: none !important;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  outline: none;
+}
+.search-group:focus-within #btnSearch {
+  color: #2e7d32;
+}
+
+.search-results {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  max-width: 300px;
+  background: white !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 2001;
+}
+.search-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  text-align: left;
+  color: #333 !important;
+  display: block;
+}
+.search-item:hover {
+  background: #e8f5e9 !important;
+  color: #2e7d32 !important;
+}
+.search-item b {
+  font-size: 14px;
+  color: #000 !important;
+}
+.search-item small {
+  color: #666 !important;
+  font-size: 12px;
+  display: block;
+  margin-top: 3px;
+}
+
 #map {
   height: calc(100vh - 60px);
   width: 100%;
 }
 
+/* =========================================
+   GIAO DIỆN POPUP CƠ BẢN VÀ NÚT SỬA/XÓA
+   ========================================= */
 .info-popup {
   min-width: 220px;
   font-size: 14px;
@@ -77,18 +171,52 @@ body {
 .info-popup b {
   color: #333;
 }
+.popup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+}
+.btn-popup {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+  transition: opacity 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+.btn-popup:hover {
+  opacity: 0.8;
+}
+.btn-edit {
+  background-color: #2196f3;
+}
+.btn-delete {
+  background-color: #f44336;
+}
+.edit-input {
+  border-color: #2196f3 !important;
+  background-color: #f1f8ff;
+}
+
 /* --- Khu vực Nút Thêm Tài Nguyên --- */
 .add-resource-container {
   position: absolute;
-  top: 150px; /* Hạ thấp xuống để né Navbar và né luôn nút Zoom */
-  left: 10px; /* Dời sang mép bên trái cho cùng cột với nút Zoom */
+  top: 150px;
+  left: 10px;
   z-index: 1000;
   font-family: Arial, sans-serif;
 }
-
-/* Trang trí nút bấm */
 .add-btn {
-  background-color: #27ae60; /* Màu xanh lá cây chuẩn hệ Sinh thái */
+  background-color: #27ae60;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -96,15 +224,12 @@ body {
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Đổ bóng 3D */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   transition: background-color 0.3s;
 }
-
 .add-btn:hover {
-  background-color: #219150; /* Đổi màu nhẹ khi rê chuột vào */
+  background-color: #219150;
 }
-
-/* Trang trí bảng danh sách tài nguyên */
 .resource-list {
   background-color: white;
   margin-top: 10px;
@@ -113,7 +238,6 @@ body {
   width: 200px;
   overflow: hidden;
 }
-
 .resource-list h4 {
   margin: 0;
   padding: 12px;
@@ -123,13 +247,11 @@ body {
   border-bottom: 1px solid #eee;
   text-align: center;
 }
-
 .resource-list ul {
-  list-style-type: none; /* Xóa dấu chấm tròn của thẻ li */
+  list-style-type: none;
   padding: 0;
   margin: 0;
 }
-
 .resource-list li {
   padding: 12px 15px;
   cursor: pointer;
@@ -138,21 +260,26 @@ body {
   border-bottom: 1px solid #f1f1f1;
   transition: background-color 0.2s;
 }
-
 .resource-list li:hover {
-  background-color: #e8f8f5; /* Sáng lên khi rê chuột vào từng mục */
+  background-color: #e8f8f5;
   color: #27ae60;
 }
-
-/* Thần chú tàng hình: Dùng để giấu danh sách đi */
 .hidden {
-  display: none;
+  display: none !important;
 }
+
 /* =========================================
    GIAO DIỆN FORM NHẬP LIỆU WFS-T TRÊN BẢN ĐỒ
    ========================================= */
+
+/* 👉 THẦN CHÚ: Phá vỡ bức tường giới hạn chiều cao của Leaflet để hiện Full Form */
+.leaflet-popup-content,
+.leaflet-popup-content-wrapper {
+  max-height: none !important;
+}
+
 .wfs-form-container {
-  width: 280px;
+  width: 280px; /* Giữ nguyên chiều rộng vừa đẹp */
   font-family: Arial, sans-serif;
 }
 
@@ -160,28 +287,31 @@ body {
   text-align: center;
   color: #4caf50;
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 15px; /* Tăng khoảng cách dưới tiêu đề */
   padding-bottom: 8px;
   border-bottom: 2px solid #4caf50;
 }
 
+/* 👉 TRẢ LẠI SỰ THOÁNG ĐÃNG: Không ép chữ bị "cụt" nữa */
 .wfs-form-group {
-  margin-bottom: 10px;
+  margin-bottom: 12px; /* Tăng khoảng cách giữa các hàng */
 }
 
 .wfs-form-group label {
   font-weight: bold;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 5px; /* Đẩy ô nhập liệu cách xa tiêu đề nhỏ ra một chút */
   color: #333;
+  font-size: 13px; /* Phóng to chữ Label lên chút cho dễ đọc */
 }
 
 .wfs-input {
   width: 100%;
-  padding: 6px;
+  padding: 8px 10px; /* Phóng to ô nhập liệu để chữ gõ vào thoải mái */
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box; /* Giúp padding không làm tràn khung */
+  box-sizing: border-box;
+  font-size: 14px;
 }
 
 .wfs-input:focus {
@@ -193,7 +323,7 @@ body {
 .wfs-flex-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .wfs-flex-col {
@@ -204,18 +334,19 @@ body {
 .wfs-button-group {
   display: flex;
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 20px; /* Đẩy nút Lưu/Hủy xuống cách xa form một chút */
 }
 
 .wfs-btn {
   flex: 1;
   color: white;
   border: none;
-  padding: 8px;
+  padding: 10px; /* Nút to ra dễ bấm hơn */
   cursor: pointer;
   font-weight: bold;
   border-radius: 4px;
   transition: background-color 0.3s;
+  font-size: 13px;
 }
 
 .wfs-btn-cancel {
@@ -230,4 +361,282 @@ body {
 }
 .wfs-btn-save:hover {
   background-color: #388e3c;
+}
+
+/* =========================================
+   GIAO DIỆN BẢNG CHỌN LỚP (LAYER CONTROL THU GỌN VÀ MỞ RỘNG)
+   ========================================= */
+
+/* Trạng thái mặc định (Cục Icon Thu Gọn) và Mở Rộng dùng chung bóng đổ */
+.leaflet-control-layers {
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Khi rê chuột vào Mở Rộng ra thì thêm Padding để rộng rãi */
+.leaflet-control-layers-expanded {
+  padding: 12px 15px !important;
+}
+
+.leaflet-control-layers-list {
+  margin-bottom: 0;
+  min-width: 250px; /* Ép bề rộng không bị bẹp chữ */
+}
+
+/* Hỗ trợ đúng class lop-ban-do Đạo hữu đang dùng */
+.layer-item-wrapper,
+.lop-ban-do {
+  margin-bottom: 6px;
+}
+
+.layer-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.layer-main-row input[type="checkbox"],
+.layer-main-row input[type="radio"] {
+  margin-right: 8px;
+}
+
+.toggle-arrow {
+  cursor: pointer;
+  font-size: 11px;
+  color: #555;
+  padding: 4px 8px;
+  background: #f1f2f6;
+  border-radius: 4px;
+  margin-left: 10px;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+.toggle-arrow:hover {
+  background: #dfe4ea;
+  color: #2e7d32;
+}
+.toggle-arrow.open {
+  transform: rotate(180deg);
+  background: #2e7d32;
+  color: white;
+}
+
+.layer-filter-row {
+  padding-left: 24px;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  animation: slideDown 0.2s ease;
+  border-left: 2px solid #e0e0e0; /* Đường gạch dọc thụt lề */
+  margin-left: 6px;
+}
+
+/* Hỗ trợ đúng class lop-thuoc-tinh Đạo hữu đang dùng */
+.sub-layer-item,
+.lop-thuoc-tinh {
+  margin-bottom: 6px;
+}
+.sub-layer-item label,
+.lop-thuoc-tinh label {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+  margin: 0;
+}
+.sub-layer-item input[type="checkbox"],
+.lop-thuoc-tinh input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toolbar-container {
+  position: absolute;
+  top: 150px;
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tool-group {
+  position: relative;
+}
+.tool-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-add {
+  background-color: #27ae60;
+}
+.btn-add:hover {
+  background-color: #219150;
+}
+.btn-query {
+  background-color: #f39c12;
+  font-size: 16px;
+}
+.btn-query:hover {
+  background-color: #d68910;
+}
+.resource-list {
+  position: absolute;
+  left: 50px;
+  top: 0;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  overflow: hidden;
+}
+
+.query-panel {
+  position: absolute;
+  top: 150px;
+  left: 60px;
+  width: 340px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+.query-header {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+.query-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+}
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #888;
+}
+.btn-close:hover {
+  color: #d32f2f;
+}
+.query-tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background: #f1f2f6;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.tab-btn.active {
+  background: white;
+  color: #2e7d32;
+  font-weight: bold;
+  border-bottom: 2px solid #2e7d32;
+}
+.tab-content {
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+.form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 5px;
+}
+.form-control {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.query-divider {
+  border: 0;
+  border-top: 1px dashed #ccc;
+  margin: 15px 0;
+}
+.btn-apply {
+  width: 100%;
+  padding: 10px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.btn-apply:hover {
+  background: #1b5e20;
+}
+.empty-result {
+  text-align: center;
+  color: #888;
+  padding: 20px;
+}
+.result-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.result-item:hover {
+  background: #e8f5e9;
+}
+.result-item h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #2e7d32;
+}
+.result-item p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
 }

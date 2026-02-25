@@ -25,6 +25,19 @@
         <img src="images/logo.jpg" alt="Logo" class="brand-logo" />
         Tài Nguyên Thiên Nhiên An Giang
       </div>
+      <div class="navbar-search">
+        <div class="search-group">
+          <input
+            type="text"
+            id="inpSearch"
+            placeholder="Tìm sinh vật (VD: Voi, Trăn)..."
+            autocomplete="off"
+          />
+          <button id="btnSearch">🔍</button>
+        </div>
+        <!-- Kết quả sổ xuống -->
+        <div id="searchResults" class="search-results hidden"></div>
+      </div>
       <div class="navbar-menu">
         <a href="#">Trang chủ</a>
         <a href="#">Bản đồ</a>
@@ -33,57 +46,137 @@
       </div>
     </nav>
     <div id="map"></div>
-    <div class="add-resource-container">
-      <button id="btnThemTaiNguyen" class="add-btn">
-        <span>+</span>
+    <div id="map"></div>
+
+    <!-- CÁC NÚT CÔNG CỤ (Nút Thêm và Nút Truy Vấn) -->
+    <div class="toolbar-container">
+      <div class="tool-group">
+        <button
+          id="btnThemTaiNguyen"
+          class="tool-btn btn-add"
+          title="Thêm tài nguyên"
+        >
+          +
+        </button>
+        <!-- Danh sách thêm tài nguyên -->
+        <div id="danhSachTaiNguyen" class="resource-list hidden">
+          <h4>Chọn loại cần thêm:</h4>
+          <ul id="danhSachLoaiTaiNguyen">
+            <li
+              class="resource-item"
+              data-loai="polygon"
+              data-ten="Tài nguyên Rừng"
+            >
+              Tài nguyên Rừng
+            </li>
+            <li
+              class="resource-item"
+              data-loai="polygon"
+              data-ten="Tài nguyên Đất"
+            >
+              Tài nguyên Đất
+            </li>
+            <li
+              class="resource-item"
+              data-loai="polyline"
+              data-ten="Tài nguyên Nước"
+            >
+              Tài nguyên Nước
+            </li>
+            <li
+              class="resource-item"
+              data-loai="point"
+              data-ten="Mỏ khoáng sản"
+            >
+              Mỏ khoáng sản
+            </li>
+            <li
+              class="resource-item"
+              data-loai="point"
+              data-ten="Tài nguyên Động vật"
+            >
+              Tài nguyên Động vật
+            </li>
+            <li
+              class="resource-item"
+              data-loai="point"
+              data-ten="Tài nguyên Thực vật"
+            >
+              Tài nguyên Thực vật
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <button
+        id="btnMoTruyVan"
+        class="tool-btn btn-query"
+        title="Truy vấn dữ liệu"
+      >
+        🔍
       </button>
+    </div>
 
-      <div id="danhSachTaiNguyen" class="resource-list hidden">
-        <h4>Chọn loại cần thêm:</h4>
-        <ul id="danhSachLoaiTaiNguyen">
-          <li
-            class="resource-item"
-            data-loai="polygon"
-            data-ten="Tài nguyên Rừng"
-          >
-            🌳 Tài nguyên Rừng
-          </li>
+    <!-- BẢNG TRUY VẤN (Mặc định ẩn) -->
+    <div class="query-panel hidden" id="bangTruyVan">
+      <div class="query-header">
+        <h3>Bảng Truy Vấn Dữ Liệu</h3>
+        <button class="btn-close" id="btnDongTruyVan">✖</button>
+      </div>
 
-          <li
-            class="resource-item"
-            data-loai="polygon"
-            data-ten="Tài nguyên Đất"
-          >
-            🟤 Tài nguyên Đất
-          </li>
+      <div class="query-tabs">
+        <button class="tab-btn active" data-target="tabDieuKien">
+          Truy vấn
+        </button>
+        <button class="tab-btn" data-target="tabKetQua">
+          Kết quả (<span id="txtCount">0</span>)
+        </button>
+      </div>
 
-          <li
-            class="resource-item"
-            data-loai="polyline"
-            data-ten="Tài nguyên Nước"
-          >
-            💧 Tài nguyên Nước
-          </li>
+      <!-- TAB 1: NHẬP ĐIỀU KIỆN LỌC -->
+      <div class="tab-content active" id="tabDieuKien">
+        <div class="form-group">
+          <label>CHỌN LỚP DỮ LIỆU</label>
+          <select class="form-control" id="cboLopDuLieu">
+            <option value="angiang:khoangsan_diem_mo">Mỏ Khoáng Sản</option>
+            <option value="angiang:rung">Tài Nguyên Rừng</option>
+            <option value="angiang:dat">Tài Nguyên Đất</option>
+            <option value="angiang:waterways">Tài Nguyên Nước</option>
+            <option value="angiang:dongvat">Động Vật Hoang Dã</option>
+            <option value="angiang:thucvat">Thực Vật Quý Hiếm</option>
+          </select>
+        </div>
 
-          <li class="resource-item" data-loai="point" data-ten="Mỏ khoáng sản">
-            ⛏️ Mỏ khoáng sản
-          </li>
-          <li
-            class="resource-item"
-            data-loai="point"
-            data-ten="Tài nguyên Động vật"
-          >
-            🐅 Tài nguyên Động vật
-          </li>
+        <hr class="query-divider" />
 
-          <li
-            class="resource-item"
-            data-loai="point"
-            data-ten="Tài nguyên Thực vật"
-          >
-            🌿 Tài nguyên Thực vật
-          </li>
-        </ul>
+        <!-- Ô TÌNH TRẠNG TRỐNG TRƠN, JS SẼ TỰ ĐỘNG BƠM CHỮ VÀO ĐÂY -->
+        <div class="form-group" id="khungLocTinhTrang">
+          <label id="lblTinhTrang">LỌC THEO TÌNH TRẠNG</label>
+          <select class="form-control" id="cboTinhTrang">
+            <option value="all">-- Tất cả --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>TÌM THEO TÊN (Chứa từ khóa)</label>
+          <input
+            type="text"
+            class="form-control"
+            id="txtTuKhoa"
+            placeholder="VD: Trà Sư, Cát, Tê tê..."
+          />
+        </div>
+
+        <button class="btn-apply" id="btnApDung">ÁP DỤNG LỌC DỮ LIỆU</button>
+      </div>
+
+      <!-- TAB 2: HIỂN THỊ KẾT QUẢ -->
+      <div class="tab-content" id="tabKetQua">
+        <div id="lstKetQua">
+          <div class="empty-result">
+            Chưa có dữ liệu. Vui lòng thực hiện truy vấn!
+          </div>
+        </div>
       </div>
     </div>
     <script src="script.js"></script>
