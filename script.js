@@ -636,10 +636,6 @@ function xoaDuLieuWFS(layerName, featureId, layerObj) {
 const btnThemTaiNguyen = document.getElementById("btnThemTaiNguyen");
 const danhSachTaiNguyen = document.getElementById("danhSachTaiNguyen");
 
-btnThemTaiNguyen.addEventListener("click", function () {
-  danhSachTaiNguyen.classList.toggle("hidden");
-});
-
 var taiNguyenDangChon = "";
 const cacLoaiTaiNguyen = document.querySelectorAll(".resource-item");
 const menuTaiNguyen = document.getElementById("danhSachTaiNguyen");
@@ -1255,7 +1251,7 @@ function phongDuLieuSinhVatLenGeoServer(
 }
 
 // ==========================================
-// PHẦN 6: TÌM KIẾM ĐA LUỒNG (CHỈ TÌM THEO THUỘC TÍNH TÊN)
+// PHẦN 6: TÌM KIẾM ĐA LUỒNG VÀ HIỂN THỊ FULL POPUP
 // ==========================================
 const inpSearch = document.getElementById("inpSearch");
 const btnSearch = document.getElementById("btnSearch");
@@ -1265,23 +1261,34 @@ function thucThiTimKiem() {
   var query = inpSearch.value.trim();
   if (!query) return;
 
+  // 1. Mở rộng tìm kiếm: Tìm cả theo Tên và Loại/Phân loại
   const cacLopCanTim = [
-    { layer: "angiang:dongvat", column: "ten_loai", label: "Động vật" },
-    { layer: "angiang:thucvat", column: "ten_loai", label: "Thực vật" },
-    { layer: "angiang:rung", column: "ten", label: "Rừng" },
-    { layer: "angiang:dat", column: "ten", label: "Đất" },
-    { layer: "angiang:waterways", column: "ten", label: "Nước" },
+    {
+      layer: "angiang:dongvat",
+      cols: ["ten_loai", "phan_loai"],
+      label: "Động vật",
+    },
+    {
+      layer: "angiang:thucvat",
+      cols: ["ten_loai", "phan_loai"],
+      label: "Thực vật",
+    },
+    { layer: "angiang:rung", cols: ["ten", "loai_rung"], label: "Rừng" },
+    { layer: "angiang:dat", cols: ["ten", "loai_dat_su_dung"], label: "Đất" },
+    { layer: "angiang:waterways", cols: ["ten", "loai"], label: "Nước" },
     {
       layer: "angiang:khoangsan_diem_mo",
-      column: "ten_don_vi",
+      cols: ["ten_don_vi", "loai_khoang_san"],
       label: "Khoáng sản",
     },
   ];
 
   searchResults.classList.remove("hidden");
+  searchResults.innerHTML =
+    "<div class='search-item'>⏳ Đang tìm kiếm...</div>";
 
   const promises = cacLopCanTim.map((config) => {
-    let filter = `${config.column} ILIKE '%${query}%'`;
+    let filter = config.cols.map((c) => `${c} ILIKE '%${query}%'`).join(" OR ");
     let url = `/myproxy/angiang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=${config.layer}&outputFormat=application/json&CQL_FILTER=${encodeURIComponent(filter)}`;
 
     return fetch(url)
@@ -1289,14 +1296,16 @@ function thucThiTimKiem() {
       .then((data) => {
         if (!data.features) return [];
         return data.features.map((f) => ({
-          ten: f.properties[config.column],
+          ten:
+            f.properties.ten ||
+            f.properties.ten_don_vi ||
+            f.properties.ten_loai ||
+            "Không xác định",
           loai: config.label,
           feature: f,
         }));
       })
-      .catch((err) => {
-        return [];
-      });
+      .catch(() => []);
   });
 
   Promise.all(promises).then((mangKetQua) => {
@@ -1305,7 +1314,7 @@ function thucThiTimKiem() {
 
     if (tatCaKetQua.length === 0) {
       searchResults.innerHTML =
-        "<div class='search-item' style='color:#d32f2f;'>Không tìm thấy kết quả!</div>";
+        "<div class='search-item' style='color:#d32f2f;'>❌ Không tìm thấy kết quả!</div>";
     } else {
       tatCaKetQua.forEach((item) => {
         var div = document.createElement("div");
@@ -1316,14 +1325,29 @@ function thucThiTimKiem() {
           var geojsonLayer = L.geoJSON(item.feature);
           var tamDiem = geojsonLayer.getBounds().getCenter();
           map.flyTo(tamDiem, 15, { duration: 1.5 });
+
           setTimeout(() => {
-            L.popup()
-              .setLatLng(tamDiem)
-              .setContent(
-                `<h4>${item.ten}</h4><p>Nhóm tài nguyên: <b>${item.loai}</b></p>`,
-              )
-              .openOn(map);
+            // 🌟 2. BÍ QUYẾT Ở ĐÂY: Vòng lặp in ra toàn bộ thông tin trong Popup
+            let props = item.feature.properties;
+            let popupContent = `<div class="info-popup"><h4 style="margin-top:0; color:#2e7d32; border-bottom:2px solid #4caf50; padding-bottom:5px;">${item.ten}</h4>`;
+
+            for (let key in props) {
+              if (
+                key !== "bbox" &&
+                key !== "geom" &&
+                key !== "id" &&
+                props[key] !== null &&
+                props[key] !== ""
+              ) {
+                let tenDep = TU_DIEN_COT[key] || key; // Dịch tên cột sang tiếng Việt
+                popupContent += `<p style="margin:6px 0; font-size:13px;"><b>${tenDep}:</b> <span class="val-display">${props[key]}</span></p>`;
+              }
+            }
+            popupContent += `</div>`;
+
+            L.popup().setLatLng(tamDiem).setContent(popupContent).openOn(map);
           }, 1500);
+
           searchResults.classList.add("hidden");
         });
         searchResults.appendChild(div);
@@ -1348,10 +1372,6 @@ var resultLayer = new L.FeatureGroup().addTo(map);
 // 1. Quản lý bảng Truy vấn
 const bangTruyVan = document.getElementById("bangTruyVan");
 const btnDongTruyVan = document.getElementById("btnDongTruyVan");
-
-document.getElementById("btnMoTruyVan").addEventListener("click", () => {
-  bangTruyVan.classList.remove("hidden");
-});
 
 // 👉 TÍNH NĂNG THOÁT TRUY VẤN KHI NHẤN DẤU X (CẬP NHẬT MỚI)
 btnDongTruyVan.addEventListener("click", () => {
@@ -1653,15 +1673,63 @@ const panelThongKe = document.getElementById("panelThongKe");
 const btnDongThongKe = document.getElementById("btnDongThongKe");
 
 // Sự kiện bật tắt menu thống kê
-btnThongKe.addEventListener("click", () => {
-  danhSachThongKe.classList.toggle("hidden");
-  // Tắt các menu khác để không đè lên nhau
-  document.getElementById("danhSachTaiNguyen").classList.add("hidden");
-  document.getElementById("bangTruyVan").classList.add("hidden");
-  // 👉 BÍ QUYẾT Ở ĐÂY: Ép giấu luôn bảng biểu đồ cũ đi để màn hình thoáng đãng
-  panelThongKe.classList.add("hidden");
+// =====================================================================
+// ĐẠI PHÁP QUẢN LÝ THANH CÔNG CỤ (TẮT/MỞ ĐỒNG BỘ 3 NÚT)
+// =====================================================================
+
+// 1. Lấy các phần tử DOM
+const uiBtnThem = document.getElementById("btnThemTaiNguyen");
+const uiPanelThem = document.getElementById("danhSachTaiNguyen");
+
+const uiBtnTruyVan = document.getElementById("btnMoTruyVan");
+const uiPanelTruyVan = document.getElementById("bangTruyVan");
+
+const uiBtnThongKe = document.getElementById("btnThongKe");
+const uiListThongKe = document.getElementById("danhSachThongKe");
+const uiDashThongKe = document.getElementById("panelThongKe");
+
+// 2. Hàm dọn dẹp: Tắt tất cả các bảng, ngoại trừ bảng đang được chỉ định
+function tatTatCaMenuTru(menuGiuLai) {
+  if (menuGiuLai !== "Them") uiPanelThem.classList.add("hidden");
+  if (menuGiuLai !== "TruyVan") uiPanelTruyVan.classList.add("hidden");
+  if (menuGiuLai !== "ThongKe") {
+    uiListThongKe.classList.add("hidden");
+    uiDashThongKe.classList.add("hidden"); // Tắt luôn cái biểu đồ nếu đang mở
+  }
+}
+
+// 3. Gắn sự kiện cho nút THÊM (+)
+uiBtnThem.addEventListener("click", () => {
+  const dangAn = uiPanelThem.classList.contains("hidden");
+  tatTatCaMenuTru("Them"); // Tắt các bảng khác
+  if (dangAn) {
+    uiPanelThem.classList.remove("hidden"); // Mở lên
+  } else {
+    uiPanelThem.classList.add("hidden"); // Bấm lần 2 thì tự tắt
+  }
 });
 
+// 4. Gắn sự kiện cho nút TRUY VẤN (🔍)
+uiBtnTruyVan.addEventListener("click", () => {
+  const dangAn = uiPanelTruyVan.classList.contains("hidden");
+  tatTatCaMenuTru("TruyVan");
+  if (dangAn) {
+    uiPanelTruyVan.classList.remove("hidden");
+  } else {
+    uiPanelTruyVan.classList.add("hidden");
+  }
+});
+
+// 5. Gắn sự kiện cho nút THỐNG KÊ (📊)
+uiBtnThongKe.addEventListener("click", () => {
+  const dangAn = uiListThongKe.classList.contains("hidden");
+  tatTatCaMenuTru("ThongKe");
+  if (dangAn) {
+    uiListThongKe.classList.remove("hidden");
+  } else {
+    uiListThongKe.classList.add("hidden");
+  }
+});
 // Nút tắt bảng thống kê
 btnDongThongKe.addEventListener("click", () => {
   panelThongKe.classList.add("hidden");
