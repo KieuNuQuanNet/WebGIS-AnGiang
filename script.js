@@ -1863,3 +1863,34 @@ document.getElementById("btnMoBaoCao").addEventListener("click", () => {
   // 3. Mở tab mới
   window.open("baocao.html", "_blank");
 });
+// Logic kiểm tra phân quyền
+document.getElementById("frmLogin").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value.trim();
+  const btn = document.getElementById("btnSubmit");
+  const err = document.getElementById("errorMsg");
+
+  btn.innerHTML = "⏳ Đang kiểm tra...";
+  btn.style.opacity = "0.8";
+  btn.disabled = true;
+  err.style.display = "none";
+
+  setTimeout(() => {
+    btn.innerHTML = "Đăng nhập";
+    btn.style.opacity = "1";
+    btn.disabled = false;
+
+    if (u === "admin" && p === "admin123") {
+      localStorage.setItem("webgis_role", "admin");
+      localStorage.setItem("webgis_user", "Quản trị viên (Admin)");
+      window.location.href = "index.html";
+    } else if (u === "canbo" && p === "123456") {
+      localStorage.setItem("webgis_role", "canbo");
+      localStorage.setItem("webgis_user", "Cán bộ Hạt Kiểm lâm");
+      window.location.href = "index.html";
+    } else {
+      err.style.display = "block";
+    }
+  }, 800);
+});

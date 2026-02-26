@@ -10,7 +10,7 @@
 
     <style>
       body {
-        background-color: #525659; /* Màu nền xám chuyên nghiệp giống trình xem PDF */
+        background-color: #525659; /* Màu nền xám giống trình đọc PDF */
         margin: 0;
         padding: 30px;
         font-family: "Times New Roman", Times, serif;
@@ -65,7 +65,7 @@
         background: white;
         width: 100%;
         max-width: 1000px;
-        min-height: 1414px; /* Tỷ lệ tương đối của khổ A4 */
+        min-height: 1414px;
         padding: 60px 80px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         color: #000;
@@ -79,7 +79,7 @@
         padding-bottom: 20px;
       }
       .title {
-        font-size: 24px;
+        font-size: 26px;
         font-weight: bold;
         margin: 0;
         text-transform: uppercase;
@@ -168,7 +168,7 @@
         }
       }
 
-      /* Thiết lập khi bấm In (Ctrl + P) - Giấu thanh công cụ và bóng đổ */
+      /* Thiết lập khi bấm In (Ctrl + P) */
       @media print {
         body {
           background: white;
@@ -193,19 +193,11 @@
     <!-- Màn hình chờ khi load dữ liệu khổng lồ -->
     <div id="loading-overlay">
       <div class="spinner"></div>
-      <p
-        style="
-          margin-top: 15px;
-          font-family: sans-serif;
-          font-weight: bold;
-          color: #2e7d32;
-        "
-      >
-        Đang trích xuất và kết xuất biểu bảng...
+      <p style="margin-top: 15px; font-family: sans-serif; font-weight: bold">
+        Đang xử lý và trích xuất dữ liệu...
       </p>
     </div>
 
-    <!-- Thanh công cụ -->
     <div class="toolbar">
       <button class="btn btn-excel" id="btnExportExcel">
         📥 Tải file Excel (.xlsx)
@@ -215,7 +207,6 @@
       </button>
     </div>
 
-    <!-- Nội dung trang báo cáo A4 -->
     <div class="a4-page">
       <div class="header">
         <h1 class="title">BÁO CÁO THỐNG KÊ CHI TIẾT</h1>
@@ -255,29 +246,52 @@
     </div>
 
     <script>
+      // Tích hợp từ điển vào trang báo cáo để dịch cột chuẩn xác
+      const TU_DIEN_COT = {
+        ten: "Tên tài nguyên",
+        ten_don_vi: "Tên mỏ / Đơn vị",
+        ten_loai: "Tên loài sinh vật",
+        nhom: "Nhóm",
+        loai: "Loại",
+        loai_rung: "Loại rừng",
+        loai_khoang_san: "Loại khoáng sản",
+        loai_dat_su_dung: "Loại đất",
+        nhom_su_dung: "Nhóm sử dụng",
+        tinh_trang: "Tình trạng",
+        dien_tich: "Diện tích",
+        dien_tich_ha: "Diện tích (Hecta)",
+        dien_tich_m2: "Diện tích (m2)",
+        tru_luong: "Trữ lượng",
+        dia_chi: "Địa chỉ",
+        doi_tuong_bao_ve: "Đối tượng bảo vệ",
+        cap: "Cấp",
+        phan_loai: "Phân loại",
+        vi_tri_phan_bo: "Vị trí phân bố",
+        muc_do_nguy_cap: "Mức độ nguy cấp",
+        nguon_du_lieu: "Nguồn dữ liệu",
+        nguon: "Nguồn tham khảo",
+      };
+
       let reportData = null;
 
-      // Khởi chạy ngay khi trang báo cáo được mở lên
       window.onload = function () {
-        // Lấy dữ liệu từ bộ nhớ tạm (sessionStorage) do trang Bản đồ gửi sang
+        // Lấy dữ liệu từ sessionStorage do trang Bản đồ gửi sang
         const raw = sessionStorage.getItem("webgis_report_data");
-
         if (!raw) {
           alert(
             "Không tìm thấy dữ liệu! Vui lòng thực hiện thống kê ở trang bản đồ trước.",
           );
-          window.close(); // Đóng tab nếu không có dữ liệu
+          window.close();
           return;
         }
 
-        // Dùng setTimeout 100ms để trình duyệt kịp vẽ cái Loading xoay xoay lên màn hình trước khi xử lý bảng dữ liệu nặng
+        // Dùng setTimeout để giao diện Loading hiện lên trước khi JavaScript "đóng băng" trình duyệt để vẽ bảng lớn
         setTimeout(() => {
           reportData = JSON.parse(raw);
           renderReport(reportData);
         }, 100);
       };
 
-      // Hàm chính để vẽ bảng
       function renderReport(data) {
         document.getElementById("txtTenLop").innerText = data.layerName;
         document.getElementById("txtNgayLap").innerText =
@@ -290,21 +304,20 @@
 
         if (data.features.length === 0) return;
 
-        // 1. Tạo tiêu đề cột (Dùng từ điển để dịch sang Tiếng Việt)
+        // 1. Tạo tiêu đề cột
         const firstProps = data.features[0].properties;
         const keys = Object.keys(firstProps).filter(
           (k) => !["bbox", "geom", "id"].includes(k),
         );
-        const dictionary = data.dictionary || {};
 
         let headRow = "<tr><th>STT</th>";
         keys.forEach((k) => {
-          const tenTiengViet = dictionary[k] || k;
+          const tenTiengViet = TU_DIEN_COT[k] || k;
           headRow += `<th>${tenTiengViet}</th>`;
         });
         thead.innerHTML = headRow + "</tr>";
 
-        // 2. Đổ dữ liệu (Gom thành 1 chuỗi HTML lớn để render 1 lần, giúp trình duyệt không bị treo)
+        // 2. Đổ dữ liệu (Gom thành 1 chuỗi HTML lớn để Render cực nhanh)
         let bodyHtml = "";
         data.features.forEach((f, index) => {
           let rowHtml = `<tr><td style="text-align:center;">${index + 1}</td>`;
@@ -319,34 +332,28 @@
         });
         tbody.innerHTML = bodyHtml;
 
-        // 3. Render xong thì tắt màn hình chờ đi
+        // Tắt màn hình chờ
         document.getElementById("loading-overlay").style.display = "none";
       }
 
-      // --- SỰ KIỆN NÚT BẤM ---
-
-      // Lệnh In ra giấy hoặc lưu PDF (Gọi hộp thoại mặc định của trình duyệt)
+      // Lệnh In
       document.getElementById("btnExportPDF").onclick = () => window.print();
 
-      // Lệnh xuất Excel bằng thư viện SheetJS
+      // Lệnh xuất Excel bằng SheetJS
       document.getElementById("btnExportExcel").onclick = () => {
         if (!reportData) return;
 
-        const dict = reportData.dictionary || {};
-
-        // Xào lại mảng dữ liệu cho đúng tên cột Tiếng Việt trước khi xuất
         const excelRows = reportData.features.map((f, i) => {
           let row = { STT: i + 1 };
           for (let k in f.properties) {
             if (!["bbox", "geom", "id"].includes(k)) {
-              const headerName = dict[k] || k;
+              const headerName = TU_DIEN_COT[k] || k;
               row[headerName] = f.properties[k];
             }
           }
           return row;
         });
 
-        // Gọi SheetJS tạo file .xlsx
         const worksheet = XLSX.utils.json_to_sheet(excelRows);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Báo Cáo GIS");
