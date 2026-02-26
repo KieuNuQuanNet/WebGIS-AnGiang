@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Báo Cáo Chi Tiết - WebGIS An Giang</title>
+
+    <!-- Thư viện Xuất Excel (SheetJS) -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+      body {
+        background-color: #525659; /* Màu nền xám chuyên nghiệp giống trình xem PDF */
+        margin: 0;
+        padding: 30px;
+        font-family: "Times New Roman", Times, serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Thanh công cụ điều khiển */
+      .toolbar {
+        width: 100%;
+        max-width: 1000px;
+        background: #323639;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        color: white;
+        transition: 0.2s;
+        font-family: sans-serif;
+        font-size: 13px;
+      }
+      .btn-excel {
+        background-color: #1e88e5;
+      }
+      .btn-excel:hover {
+        background-color: #1565c0;
+      }
+      .btn-print {
+        background-color: #d32f2f;
+      }
+      .btn-print:hover {
+        background-color: #b71c1c;
+      }
+
+      /* Tờ giấy A4 */
+      .a4-page {
+        background: white;
+        width: 100%;
+        max-width: 1000px;
+        min-height: 1414px; /* Tỷ lệ tương đối của khổ A4 */
+        padding: 60px 80px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        color: #000;
+        box-sizing: border-box;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 20px;
+      }
+      .title {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
+        text-transform: uppercase;
+        color: #2e7d32;
+      }
+      .subtitle {
+        font-size: 14px;
+        margin-top: 5px;
+        color: #555;
+      }
+
+      .meta-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        font-style: italic;
+        font-size: 15px;
+      }
+
+      /* Bảng dữ liệu tối ưu cho hàng ngàn dòng */
+      .table-container {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+        word-break: break-word;
+      }
+      th {
+        background-color: #f2f2f2;
+        text-align: center;
+        font-weight: bold;
+      }
+      tr:nth-child(even) {
+        background-color: #fafafa;
+      }
+
+      .footer {
+        margin-top: 60px;
+        text-align: right;
+      }
+      .signature-box {
+        margin-top: 10px;
+        padding-right: 40px;
+        font-weight: bold;
+      }
+
+      /* Hiệu ứng đang tải */
+      #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #2e7d32;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Thiết lập khi bấm In (Ctrl + P) - Giấu thanh công cụ và bóng đổ */
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .toolbar {
+          display: none !important;
+        }
+        .a4-page {
+          box-shadow: none;
+          padding: 0;
+          max-width: 100%;
+          margin: 0;
+        }
+        table {
+          font-size: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Màn hình chờ khi load dữ liệu khổng lồ -->
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <p
+        style="
+          margin-top: 15px;
+          font-family: sans-serif;
+          font-weight: bold;
+          color: #2e7d32;
+        "
+      >
+        Đang trích xuất và kết xuất biểu bảng...
+      </p>
+    </div>
+
+    <!-- Thanh công cụ -->
+    <div class="toolbar">
+      <button class="btn btn-excel" id="btnExportExcel">
+        📥 Tải file Excel (.xlsx)
+      </button>
+      <button class="btn btn-print" id="btnExportPDF">
+        🖨️ In Báo Cáo / Xuất PDF
+      </button>
+    </div>
+
+    <!-- Nội dung trang báo cáo A4 -->
+    <div class="a4-page">
+      <div class="header">
+        <h1 class="title">BÁO CÁO THỐNG KÊ CHI TIẾT</h1>
+        <p class="subtitle">
+          Hệ thống Thông tin Địa lý (WebGIS) Quản lý Tài nguyên tỉnh An Giang
+        </p>
+      </div>
+
+      <div class="meta-info">
+        <span>Người lập: Quản trị viên hệ thống</span>
+        <span id="txtNgayLap">Ngày lập: ...</span>
+      </div>
+
+      <p style="font-size: 15px">
+        Kết quả trích xuất lớp dữ liệu:
+        <b id="txtTenLop" style="color: #d32f2f; text-transform: uppercase"
+          >...</b
+        >
+        <br />Tổng số đối tượng ghi nhận:
+        <b id="txtTongSo" style="color: #1e88e5">0</b>
+      </p>
+
+      <div class="table-container">
+        <table id="tableReport">
+          <thead id="theadReport"></thead>
+          <tbody id="tbodyReport"></tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div>An Giang, ngày ...... tháng ...... năm 2026</div>
+        <div class="signature-box">XÁC NHẬN CỦA CƠ QUAN CHUYÊN MÔN</div>
+        <div style="margin-top: 80px; padding-right: 65px">
+          (Ký tên và đóng dấu)
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let reportData = null;
+
+      // Khởi chạy ngay khi trang báo cáo được mở lên
+      window.onload = function () {
+        // Lấy dữ liệu từ bộ nhớ tạm (sessionStorage) do trang Bản đồ gửi sang
+        const raw = sessionStorage.getItem("webgis_report_data");
+
+        if (!raw) {
+          alert(
+            "Không tìm thấy dữ liệu! Vui lòng thực hiện thống kê ở trang bản đồ trước.",
+          );
+          window.close(); // Đóng tab nếu không có dữ liệu
+          return;
+        }
+
+        // Dùng setTimeout 100ms để trình duyệt kịp vẽ cái Loading xoay xoay lên màn hình trước khi xử lý bảng dữ liệu nặng
+        setTimeout(() => {
+          reportData = JSON.parse(raw);
+          renderReport(reportData);
+        }, 100);
+      };
+
+      // Hàm chính để vẽ bảng
+      function renderReport(data) {
+        document.getElementById("txtTenLop").innerText = data.layerName;
+        document.getElementById("txtNgayLap").innerText =
+          "Ngày lập: " + data.date;
+        document.getElementById("txtTongSo").innerText =
+          data.features.length + " đối tượng";
+
+        const thead = document.getElementById("theadReport");
+        const tbody = document.getElementById("tbodyReport");
+
+        if (data.features.length === 0) return;
+
+        // 1. Tạo tiêu đề cột (Dùng từ điển để dịch sang Tiếng Việt)
+        const firstProps = data.features[0].properties;
+        const keys = Object.keys(firstProps).filter(
+          (k) => !["bbox", "geom", "id"].includes(k),
+        );
+        const dictionary = data.dictionary || {};
+
+        let headRow = "<tr><th>STT</th>";
+        keys.forEach((k) => {
+          const tenTiengViet = dictionary[k] || k;
+          headRow += `<th>${tenTiengViet}</th>`;
+        });
+        thead.innerHTML = headRow + "</tr>";
+
+        // 2. Đổ dữ liệu (Gom thành 1 chuỗi HTML lớn để render 1 lần, giúp trình duyệt không bị treo)
+        let bodyHtml = "";
+        data.features.forEach((f, index) => {
+          let rowHtml = `<tr><td style="text-align:center;">${index + 1}</td>`;
+          keys.forEach((k) => {
+            const value =
+              f.properties[k] !== null && f.properties[k] !== ""
+                ? f.properties[k]
+                : "-";
+            rowHtml += `<td>${value}</td>`;
+          });
+          bodyHtml += rowHtml + "</tr>";
+        });
+        tbody.innerHTML = bodyHtml;
+
+        // 3. Render xong thì tắt màn hình chờ đi
+        document.getElementById("loading-overlay").style.display = "none";
+      }
+
+      // --- SỰ KIỆN NÚT BẤM ---
+
+      // Lệnh In ra giấy hoặc lưu PDF (Gọi hộp thoại mặc định của trình duyệt)
+      document.getElementById("btnExportPDF").onclick = () => window.print();
+
+      // Lệnh xuất Excel bằng thư viện SheetJS
+      document.getElementById("btnExportExcel").onclick = () => {
+        if (!reportData) return;
+
+        const dict = reportData.dictionary || {};
+
+        // Xào lại mảng dữ liệu cho đúng tên cột Tiếng Việt trước khi xuất
+        const excelRows = reportData.features.map((f, i) => {
+          let row = { STT: i + 1 };
+          for (let k in f.properties) {
+            if (!["bbox", "geom", "id"].includes(k)) {
+              const headerName = dict[k] || k;
+              row[headerName] = f.properties[k];
+            }
+          }
+          return row;
+        });
+
+        // Gọi SheetJS tạo file .xlsx
+        const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Báo Cáo GIS");
+
+        const fileName = `Bao_Cao_${reportData.layerName.replace(/\s+/g, "_")}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+      };
+    </script>
+  </body>
+</html>

@@ -1658,6 +1658,8 @@ btnThongKe.addEventListener("click", () => {
   // Tắt các menu khác để không đè lên nhau
   document.getElementById("danhSachTaiNguyen").classList.add("hidden");
   document.getElementById("bangTruyVan").classList.add("hidden");
+  // 👉 BÍ QUYẾT Ở ĐÂY: Ép giấu luôn bảng biểu đồ cũ đi để màn hình thoáng đãng
+  panelThongKe.classList.add("hidden");
 });
 
 // Nút tắt bảng thống kê
@@ -1771,7 +1773,7 @@ function veBieuDo(labels, data) {
   });
 }
 // =====================================================================
-// LOGIC XEM TRANG BÁO CÁO CHI TIẾT (A4) & XUẤT FILE
+// LOGIC MỞ TRANG BÁO CÁO ĐỘC LẬP (CHỐNG TREO TRÌNH DUYỆT)
 // =====================================================================
 document.getElementById("btnMoBaoCao").addEventListener("click", () => {
   if (currentReportFeatures.length === 0) {
@@ -1779,64 +1781,17 @@ document.getElementById("btnMoBaoCao").addEventListener("click", () => {
     return;
   }
 
-  // Mở màn hình overlay
-  document.getElementById("manHinhBaoCao").classList.remove("hidden");
-  document.getElementById("repLayerName").innerText =
-    currentReportLayerName.toUpperCase();
-  document.getElementById("repDate").innerText =
-    "Ngày lập: " + new Date().toLocaleDateString("vi-VN");
+  // 1. Gói dữ liệu truyền sang trang baocao.html
+  const dataToExport = {
+    layerName: currentReportLayerName,
+    features: currentReportFeatures,
+    date: new Date().toLocaleDateString("vi-VN"),
+    dictionary: TU_DIEN_COT, // Đưa luôn từ điển sang để trang kia dịch tên cột
+  };
 
-  const head = document.getElementById("inTieuDeCot");
-  const body = document.getElementById("inNoiDungCot");
-  head.innerHTML = "";
-  body.innerHTML = "";
+  // 2. Lưu vào bộ nhớ tạm
+  sessionStorage.setItem("webgis_report_data", JSON.stringify(dataToExport));
 
-  // Lấy tiêu đề cột (bỏ cột hệ thống)
-  let keys = Object.keys(currentReportFeatures[0].properties).filter(
-    (k) => !["bbox", "geom", "id"].includes(k),
-  );
-  let headRow = "<tr><th>STT</th>";
-  keys.forEach((k) => {
-    let tenDep = TU_DIEN_COT[k] || k;
-    headRow += `<th>${tenDep}</th>`;
-  });
-  head.innerHTML = headRow + "</tr>";
-
-  // Đổ dữ liệu vào hàng
-  currentReportFeatures.forEach((f, i) => {
-    let row = `<tr><td style="text-align:center;">${i + 1}</td>`;
-    keys.forEach((k) => (row += `<td>${f.properties[k] || "-"}</td>`));
-    body.innerHTML += row + "</tr>";
-  });
-});
-
-// Nút Đóng Báo Cáo
-document.getElementById("btnDongBaoCao").addEventListener("click", () => {
-  document.getElementById("manHinhBaoCao").classList.add("hidden");
-});
-
-// Nút In ra PDF (Gọi hộp thoại In của trình duyệt)
-document.getElementById("btnExportPDF").addEventListener("click", () => {
-  window.print();
-});
-
-// Nút Xuất file Excel bằng SheetJS
-document.getElementById("btnExportExcel").addEventListener("click", () => {
-  let exportData = currentReportFeatures.map((f, i) => {
-    let r = { STT: i + 1 };
-    for (let k in f.properties) {
-      if (!["bbox", "geom", "id"].includes(k)) {
-        let tenDep = TU_DIEN_COT[k] || k;
-        r[tenDep] = f.properties[k];
-      }
-    }
-    return r;
-  });
-  const ws = XLSX.utils.json_to_sheet(exportData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "BaoCaoChiTiet");
-  XLSX.writeFile(
-    wb,
-    `Bao_Cao_${currentReportLayerName.replace(/\s+/g, "_")}.xlsx`,
-  );
+  // 3. Mở tab mới
+  window.open("baocao.html", "_blank");
 });

@@ -41,8 +41,7 @@
       </div>
       <div class="navbar-menu">
         <a href="#">Trang chủ</a>
-        <a href="#">Bản đồ</a>
-        <a href="#">Thống kê</a>
+        <a href="#">Đăng nhập</a>
         <a href="#">Liên hệ</a>
       </div>
     </nav>
@@ -280,50 +279,7 @@
         </div>
       </div>
     </div>
-    <!-- MÀN HÌNH BÁO CÁO (CHẾ ĐỘ IN A4) -->
-    <div id="manHinhBaoCao" class="report-overlay hidden">
-      <div class="report-toolbar">
-        <button class="report-btn btn-exit" id="btnDongBaoCao">
-          ⬅ Quay lại bản đồ
-        </button>
-        <div style="display: flex; gap: 10px">
-          <button class="report-btn btn-excel-exp" id="btnExportExcel">
-            📥 Xuất file Excel
-          </button>
-          <button class="report-btn btn-pdf-exp" id="btnExportPDF">
-            🖨️ Xuất PDF / In giấy
-          </button>
-        </div>
-      </div>
 
-      <div class="report-page" id="reportContent">
-        <div class="rep-header">
-          <h2 class="rep-title">BÁO CÁO THỐNG KÊ CHI TIẾT</h2>
-          <p class="rep-subtitle">
-            Hệ thống WebGIS Quản lý Tài nguyên tỉnh An Giang
-          </p>
-        </div>
-        <div class="rep-meta">
-          <span>Người lập: Quản trị viên hệ thống</span>
-          <span id="repDate">Ngày lập: ...</span>
-        </div>
-        <div style="margin-bottom: 10px; font-size: 15px">
-          Kết quả trích xuất lớp:
-          <b id="repLayerName" style="color: #d32f2f">...</b>
-        </div>
-        <div style="width: 100%; overflow-x: auto; margin-top: 15px">
-          <table class="rep-table">
-            <thead id="inTieuDeCot"></thead>
-            <tbody id="inNoiDungCot"></tbody>
-          </table>
-        </div>
-        <div class="rep-footer">
-          <div>An Giang, ngày ... tháng ... năm ...</div>
-          <div class="rep-signature">XÁC NHẬN CỦA CƠ QUAN</div>
-          <div style="margin-top: 60px">(Ký và đóng dấu)</div>
-        </div>
-      </div>
-    </div>
     <script src="script.js"></script>
   </body>
 </html>
