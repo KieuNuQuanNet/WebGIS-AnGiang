@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - WebGIS An Giang</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #247514; /* Màu xanh lá chủ đạo từ thiết kế */
+        overflow: hidden;
+      }
+
+      /* Container chính bọc toàn bộ màn hình */
+      .login-wrapper {
+        display: flex;
+        width: 100%;
+        height: 100vh;
+      }
+
+      /* KHUNG TRÁI: Màu xanh chứa Logo */
+      .left-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #247514; /* Xanh lá thẫm */
+        position: relative;
+        z-index: 2;
+      }
+
+      /* Xử lý ảnh Logo hình tròn */
+      .left-panel img {
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); /* Đổ bóng nhẹ cho khối nổi lên */
+      }
+
+      /* Chữ TÀI NGUYÊN THIÊN NHIÊN (Dùng font Serif giống mẫu) */
+      .left-panel h1 {
+        color: white;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 42px;
+        text-align: center;
+        line-height: 1.4;
+        letter-spacing: 2px;
+        margin-top: 40px;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      /* KHUNG PHẢI: Màu trắng chứa Form đăng nhập */
+      .right-panel {
+        flex: 1;
+        background-color: white;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Tạo đường bo tròn ở góc trên và dưới bên trái */
+        border-top-left-radius: 60px;
+        border-bottom-left-radius: 60px;
+      }
+
+      /* HIỆU ỨNG ĐẶC BIỆT: Hình tròn trắng lồi ra ở giữa (Giống bản thiết kế) */
+      .right-panel::before {
+        content: "";
+        position: absolute;
+        left: -60px; /* Thụt sang mảng xanh */
+        top: 50%;
+        transform: translateY(-50%);
+        width: 120px;
+        height: 120px;
+        background-color: white;
+        border-radius: 50%;
+        z-index: 1;
+      }
+
+      /* Khung chứa nội dung Form để không bị đè bởi hình tròn lồi */
+      .form-container {
+        width: 70%;
+        max-width: 450px;
+        position: relative;
+        z-index: 3; /* Nổi lên trên */
+      }
+
+      .form-container h2 {
+        font-size: 32px;
+        color: #000;
+        margin-bottom: 40px;
+        font-weight: 800;
+      }
+
+      .input-group {
+        margin-bottom: 25px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 10px;
+        color: #000;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      /* Ô nhập liệu bo tròn dạng viên thuốc */
+      .input-group input {
+        width: 100%;
+        padding: 15px 25px;
+        border: 1px solid #777;
+        border-radius: 40px; /* Bo tròn hoàn toàn */
+        font-size: 16px;
+        outline: none;
+        transition: 0.3s;
+      }
+
+      .input-group input:focus {
+        border-color: #247514;
+        box-shadow: 0 0 8px rgba(36, 117, 20, 0.4);
+      }
+
+      /* Nút đăng nhập xanh lá bo tròn */
+      .btn-submit {
+        width: 100%;
+        padding: 15px;
+        background-color: #247514;
+        color: white;
+        border: none;
+        border-radius: 40px;
+        font-size: 22px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+      }
+
+      .btn-submit:hover {
+        background-color: #1b590e;
+        box-shadow: 0 5px 15px rgba(27, 89, 14, 0.4);
+        transform: translateY(-2px);
+      }
+
+      /* Link quay lại */
+      .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        color: #000;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 15px;
+        transition: 0.2s;
+      }
+
+      .back-link:hover {
+        color: #247514;
+        text-decoration: underline;
+      }
+
+      /* Thông báo lỗi */
+      #errorMsg {
+        color: #d32f2f;
+        font-size: 14px;
+        margin-top: 15px;
+        display: none;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      /* Responsive: Giao diện trên điện thoại */
+      @media (max-width: 900px) {
+        .login-wrapper {
+          flex-direction: column;
+          overflow-y: auto;
+          height: auto;
+          min-height: 100vh;
+        }
+        .left-panel {
+          padding: 50px 20px;
+          flex: none;
+        }
+        .right-panel {
+          border-radius: 40px 40px 0 0;
+          padding: 50px 20px;
+          flex: 1;
+          align-items: flex-start;
+        }
+        /* Tắt hiệu ứng lồi ở giữa trên mobile */
+        .right-panel::before {
+          display: none;
+        }
+        .form-container {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <!-- Nửa bên trái -->
+      <div class="left-panel">
+        <img src="images/logo.jpg" alt="Tài Nguyên Thiên Nhiên An Giang" />
+        <h1>TÀI NGUYÊN<br />THIÊN NHIÊN</h1>
+      </div>
+
+      <!-- Nửa bên phải -->
+      <div class="right-panel">
+        <div class="form-container">
+          <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
+
+          <form id="frmLogin">
+            <div class="input-group">
+              <label>Tài khoản / Username</label>
+              <input type="text" id="username" required autocomplete="off" />
+            </div>
+            <div class="input-group">
+              <label>Mật khẩu / Password</label>
+              <input type="password" id="password" required />
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmit">
+              Đăng nhập
+            </button>
+            <div id="errorMsg">❌ Sai tài khoản hoặc mật khẩu!</div>
+          </form>
+
+          <a href="index.html" class="back-link"
+            >⬅ Quay lại bản đồ (Chế độ khách)</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Logic kiểm tra phân quyền (Như cũ)
+      document
+        .getElementById("frmLogin")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const u = document.getElementById("username").value.trim();
+          const p = document.getElementById("password").value.trim();
+          const btn = document.getElementById("btnSubmit");
+          const err = document.getElementById("errorMsg");
+
+          btn.innerHTML = "⏳ Đang kiểm tra...";
+          btn.style.opacity = "0.8";
+          btn.disabled = true;
+          err.style.display = "none";
+
+          setTimeout(() => {
+            btn.innerHTML = "Đăng nhập";
+            btn.style.opacity = "1";
+            btn.disabled = false;
+
+            if (u === "admin" && p === "admin123") {
+              localStorage.setItem("webgis_role", "admin");
+              localStorage.setItem("webgis_user", "Quản trị viên (Admin)");
+              window.location.href = "index.html";
+            } else if (u === "canbo" && p === "123456") {
+              localStorage.setItem("webgis_role", "canbo");
+              localStorage.setItem("webgis_user", "Cán bộ Hạt Kiểm lâm");
+              window.location.href = "index.html";
+            } else {
+              err.style.display = "block";
+            }
+          }, 800);
+        });
+    </script>
+  </body>
+</html>
