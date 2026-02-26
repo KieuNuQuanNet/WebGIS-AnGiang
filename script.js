@@ -1353,16 +1353,19 @@ document.getElementById("btnDongTruyVan").addEventListener("click", () => {
   document.getElementById("bangTruyVan").classList.add("hidden");
 });
 
-const tabBtns = document.querySelectorAll(".tab-btn");
-const tabContents = document.querySelectorAll(".tab-content");
+const bangTruyVan = document.getElementById("bangTruyVan");
+const tabBtns = bangTruyVan.querySelectorAll(".tab-btn");
+const tabContents = bangTruyVan.querySelectorAll(".tab-content");
+
 tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
+    // Chỉ xóa active của các tab bên trong bảng Truy vấn, không đụng tới bảng Thống kê
     tabBtns.forEach((b) => b.classList.remove("active"));
     tabContents.forEach((c) => c.classList.remove("active"));
+
     btn.classList.add("active");
-    document
-      .getElementById(btn.getAttribute("data-target"))
-      .classList.add("active");
+    const targetId = btn.getAttribute("data-target");
+    bangTruyVan.querySelector("#" + targetId).classList.add("active");
   });
 });
 
@@ -1606,3 +1609,202 @@ function HienThiKetQuaTruyVan(features, lop) {
   });
   map.fitBounds(resultLayer.getBounds(), { padding: [50, 50] });
 }
+// =====================================================================
+// TÍNH NĂNG THỐNG KÊ BIỂU ĐỒ (CHART.JS)
+// =====================================================================
+let chartHienTai = null;
+let currentReportFeatures = []; // Biến hứng dữ liệu để lát in Báo Cáo
+let currentReportLayerName = "";
+const btnThongKe = document.getElementById("btnThongKe");
+const danhSachThongKe = document.getElementById("danhSachThongKe");
+const panelThongKe = document.getElementById("panelThongKe");
+const btnDongThongKe = document.getElementById("btnDongThongKe");
+
+// Sự kiện bật tắt menu thống kê
+btnThongKe.addEventListener("click", () => {
+  danhSachThongKe.classList.toggle("hidden");
+  // Tắt các menu khác để không đè lên nhau
+  document.getElementById("danhSachTaiNguyen").classList.add("hidden");
+  document.getElementById("bangTruyVan").classList.add("hidden");
+});
+
+// Nút tắt bảng thống kê
+btnDongThongKe.addEventListener("click", () => {
+  panelThongKe.classList.add("hidden");
+});
+
+// Sự kiện khi bấm vào từng lớp trong danh sách
+document.querySelectorAll(".stat-select-item").forEach((item) => {
+  item.onclick = function () {
+    const lopId = this.getAttribute("data-lop");
+    const tenHienThi = this.getAttribute("data-ten");
+
+    danhSachThongKe.classList.add("hidden");
+    panelThongKe.classList.remove("hidden");
+
+    thucThiThongKeLop(lopId, tenHienThi);
+  };
+});
+
+// Hàm gọi GeoServer và tính toán
+async function thucThiThongKeLop(lopId, tenLop) {
+  document.getElementById("txtTenLopThongKe").innerText =
+    "📊 Thống kê: " + tenLop;
+  const loader = document.getElementById("statLoader");
+  const container = document.getElementById("statContainer");
+
+  loader.style.display = "block";
+  container.classList.add("hidden");
+
+  try {
+    let keyPhanLoai = "";
+    if (lopId.includes("khoangsan")) keyPhanLoai = "tinh_trang";
+    else if (lopId.includes("rung")) keyPhanLoai = "loai_rung";
+    else if (lopId.includes("dongvat") || lopId.includes("thucvat"))
+      keyPhanLoai = "muc_do_nguy_cap";
+    else if (lopId.includes("dat")) keyPhanLoai = "loai_dat_su_dung";
+    else if (lopId.includes("waterways")) keyPhanLoai = "loai";
+
+    // Gọi dữ liệu từ máy chủ
+    const url = `/myproxy/angiang/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=${lopId}&outputFormat=application/json&maxFeatures=2000`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Mất kết nối mạng");
+
+    const data = await res.json();
+    const features = data.features || [];
+    let total = data.totalFeatures || features.length;
+    // Gán dữ liệu vào biến để dùng cho nút Báo cáo
+    currentReportFeatures = features;
+    currentReportLayerName = tenLop;
+    // Đếm gom nhóm
+    let dict = {};
+    features.forEach((f) => {
+      let val = f.properties[keyPhanLoai] || "Chưa xác định";
+      dict[val] = (dict[val] || 0) + 1;
+    });
+
+    veBieuDo(Object.keys(dict), Object.values(dict));
+
+    document.getElementById("statSummaryText").innerHTML = `
+        <strong>✅ Báo cáo tự động:</strong><br>
+        Hệ thống đang lưu trữ tổng cộng <b style="color:#d32f2f; font-size:16px;">${total}</b> đối tượng thuộc lớp <b>${tenLop}</b>.<br><br>
+        <i>Tiêu chí phân loại: ${keyPhanLoai.replace(/_/g, " ").toUpperCase()}.</i>
+    `;
+
+    loader.style.display = "none";
+    container.classList.remove("hidden");
+  } catch (err) {
+    console.error("Lỗi thống kê:", err);
+    loader.innerHTML =
+      "<div style='color:red; font-weight:bold;'>❌ Lỗi lấy dữ liệu từ GeoServer! Vui lòng bật Live Server.</div>";
+  }
+}
+
+// Hàm vẽ biểu đồ
+function veBieuDo(labels, data) {
+  const ctx = document.getElementById("chartChinh").getContext("2d");
+
+  if (chartHienTai) chartHienTai.destroy();
+
+  const colors = [
+    "#4caf50",
+    "#2196f3",
+    "#ff9800",
+    "#f44336",
+    "#9c27b0",
+    "#795548",
+    "#00bcd4",
+  ];
+
+  chartHienTai = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [
+        { data: data, backgroundColor: colors, borderWidth: 1, hoverOffset: 8 },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 13 } } },
+        title: {
+          display: true,
+          text: "BIỂU ĐỒ PHÂN LOẠI CHI TIẾT",
+          font: { size: 14 },
+        },
+      },
+      cutout: "55%",
+    },
+  });
+}
+// =====================================================================
+// LOGIC XEM TRANG BÁO CÁO CHI TIẾT (A4) & XUẤT FILE
+// =====================================================================
+document.getElementById("btnMoBaoCao").addEventListener("click", () => {
+  if (currentReportFeatures.length === 0) {
+    alert("Chưa có dữ liệu để lập báo cáo!");
+    return;
+  }
+
+  // Mở màn hình overlay
+  document.getElementById("manHinhBaoCao").classList.remove("hidden");
+  document.getElementById("repLayerName").innerText =
+    currentReportLayerName.toUpperCase();
+  document.getElementById("repDate").innerText =
+    "Ngày lập: " + new Date().toLocaleDateString("vi-VN");
+
+  const head = document.getElementById("inTieuDeCot");
+  const body = document.getElementById("inNoiDungCot");
+  head.innerHTML = "";
+  body.innerHTML = "";
+
+  // Lấy tiêu đề cột (bỏ cột hệ thống)
+  let keys = Object.keys(currentReportFeatures[0].properties).filter(
+    (k) => !["bbox", "geom", "id"].includes(k),
+  );
+  let headRow = "<tr><th>STT</th>";
+  keys.forEach((k) => {
+    let tenDep = TU_DIEN_COT[k] || k;
+    headRow += `<th>${tenDep}</th>`;
+  });
+  head.innerHTML = headRow + "</tr>";
+
+  // Đổ dữ liệu vào hàng
+  currentReportFeatures.forEach((f, i) => {
+    let row = `<tr><td style="text-align:center;">${i + 1}</td>`;
+    keys.forEach((k) => (row += `<td>${f.properties[k] || "-"}</td>`));
+    body.innerHTML += row + "</tr>";
+  });
+});
+
+// Nút Đóng Báo Cáo
+document.getElementById("btnDongBaoCao").addEventListener("click", () => {
+  document.getElementById("manHinhBaoCao").classList.add("hidden");
+});
+
+// Nút In ra PDF (Gọi hộp thoại In của trình duyệt)
+document.getElementById("btnExportPDF").addEventListener("click", () => {
+  window.print();
+});
+
+// Nút Xuất file Excel bằng SheetJS
+document.getElementById("btnExportExcel").addEventListener("click", () => {
+  let exportData = currentReportFeatures.map((f, i) => {
+    let r = { STT: i + 1 };
+    for (let k in f.properties) {
+      if (!["bbox", "geom", "id"].includes(k)) {
+        let tenDep = TU_DIEN_COT[k] || k;
+        r[tenDep] = f.properties[k];
+      }
+    }
+    return r;
+  });
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "BaoCaoChiTiet");
+  XLSX.writeFile(
+    wb,
+    `Bao_Cao_${currentReportLayerName.replace(/\s+/g, "_")}.xlsx`,
+  );
+});

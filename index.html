@@ -16,7 +16,8 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -45,7 +46,6 @@
         <a href="#">Liên hệ</a>
       </div>
     </nav>
-    <div id="map"></div>
     <div id="map"></div>
 
     <!-- CÁC NÚT CÔNG CỤ (Nút Thêm và Nút Truy Vấn) -->
@@ -115,6 +115,63 @@
       >
         🔍
       </button>
+      <!-- Cụm Nút Thống Kê -->
+      <div class="tool-group">
+        <button
+          id="btnThongKe"
+          class="tool-btn btn-stats"
+          title="Xem biểu đồ phân tích"
+        >
+          📊
+        </button>
+        <div id="danhSachThongKe" class="resource-list hidden">
+          <h4>Thống kê theo lớp:</h4>
+          <ul>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:khoangsan_diem_mo"
+              data-ten="Mỏ khoáng sản"
+            >
+              ⛏️ Khoáng sản
+            </li>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:rung"
+              data-ten="Tài nguyên Rừng"
+            >
+              🌳 Rừng
+            </li>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:dongvat"
+              data-ten="Động vật hoang dã"
+            >
+              🐅 Động vật
+            </li>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:thucvat"
+              data-ten="Thực vật quý hiếm"
+            >
+              🌿 Thực vật
+            </li>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:dat"
+              data-ten="Tài nguyên Đất"
+            >
+              🟤 Đất
+            </li>
+            <li
+              class="stat-select-item"
+              data-lop="angiang:waterways"
+              data-ten="Tài nguyên Nước"
+            >
+              💧 Nước
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <!-- BẢNG TRUY VẤN (Mặc định ẩn) -->
@@ -176,6 +233,94 @@
           <div class="empty-result">
             Chưa có dữ liệu. Vui lòng thực hiện truy vấn!
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- BẢNG HIỂN THỊ BIỂU ĐỒ (DASHBOARD) -->
+    <div
+      id="panelThongKe"
+      class="query-panel hidden"
+      style="width: 420px; left: 70px"
+    >
+      <div class="query-header">
+        <h3 id="txtTenLopThongKe" style="color: #673ab7">📈 Thống kê</h3>
+        <button class="btn-close" id="btnDongThongKe">✖</button>
+      </div>
+      <div
+        class="tab-content active"
+        style="max-height: 80vh; overflow-y: auto"
+      >
+        <div id="statLoader" style="text-align: center; padding: 40px 20px">
+          <div class="spinner"></div>
+          <p style="margin-top: 15px; color: #673ab7; font-weight: bold">
+            Đang kết nối cơ sở dữ liệu...
+          </p>
+        </div>
+        <div id="statContainer" class="hidden">
+          <div class="stat-card">
+            <canvas id="chartChinh"></canvas>
+          </div>
+          <div
+            id="statSummaryText"
+            style="
+              margin-top: 15px;
+              padding: 12px;
+              background: #f3e5f5;
+              border-left: 5px solid #673ab7;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #333;
+              line-height: 1.5;
+            "
+          ></div>
+          <!-- CHÈN NÚT BÁO CÁO VÀO ĐÂY -->
+          <button id="btnMoBaoCao" class="btn-report-action">
+            📄 XEM & XUẤT BÁO CÁO CHI TIẾT
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- MÀN HÌNH BÁO CÁO (CHẾ ĐỘ IN A4) -->
+    <div id="manHinhBaoCao" class="report-overlay hidden">
+      <div class="report-toolbar">
+        <button class="report-btn btn-exit" id="btnDongBaoCao">
+          ⬅ Quay lại bản đồ
+        </button>
+        <div style="display: flex; gap: 10px">
+          <button class="report-btn btn-excel-exp" id="btnExportExcel">
+            📥 Xuất file Excel
+          </button>
+          <button class="report-btn btn-pdf-exp" id="btnExportPDF">
+            🖨️ Xuất PDF / In giấy
+          </button>
+        </div>
+      </div>
+
+      <div class="report-page" id="reportContent">
+        <div class="rep-header">
+          <h2 class="rep-title">BÁO CÁO THỐNG KÊ CHI TIẾT</h2>
+          <p class="rep-subtitle">
+            Hệ thống WebGIS Quản lý Tài nguyên tỉnh An Giang
+          </p>
+        </div>
+        <div class="rep-meta">
+          <span>Người lập: Quản trị viên hệ thống</span>
+          <span id="repDate">Ngày lập: ...</span>
+        </div>
+        <div style="margin-bottom: 10px; font-size: 15px">
+          Kết quả trích xuất lớp:
+          <b id="repLayerName" style="color: #d32f2f">...</b>
+        </div>
+        <div style="width: 100%; overflow-x: auto; margin-top: 15px">
+          <table class="rep-table">
+            <thead id="inTieuDeCot"></thead>
+            <tbody id="inNoiDungCot"></tbody>
+          </table>
+        </div>
+        <div class="rep-footer">
+          <div>An Giang, ngày ... tháng ... năm ...</div>
+          <div class="rep-signature">XÁC NHẬN CỦA CƠ QUAN</div>
+          <div style="margin-top: 60px">(Ký và đóng dấu)</div>
         </div>
       </div>
     </div>
