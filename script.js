@@ -1345,27 +1345,59 @@ document.addEventListener("click", function (e) {
 // =========================================================
 var resultLayer = new L.FeatureGroup().addTo(map);
 
-// Đóng/Mở bảng và Chuyển Tab
+// 1. Quản lý bảng Truy vấn
+const bangTruyVan = document.getElementById("bangTruyVan");
+const btnDongTruyVan = document.getElementById("btnDongTruyVan");
+
 document.getElementById("btnMoTruyVan").addEventListener("click", () => {
-  document.getElementById("bangTruyVan").classList.remove("hidden");
-});
-document.getElementById("btnDongTruyVan").addEventListener("click", () => {
-  document.getElementById("bangTruyVan").classList.add("hidden");
+  bangTruyVan.classList.remove("hidden");
 });
 
-const bangTruyVan = document.getElementById("bangTruyVan");
+// 👉 TÍNH NĂNG THOÁT TRUY VẤN KHI NHẤN DẤU X (CẬP NHẬT MỚI)
+btnDongTruyVan.addEventListener("click", () => {
+  // 1. Giấu bảng truy vấn đi
+  bangTruyVan.classList.add("hidden");
+
+  // 2. QUAN TRỌNG: Quét sạch các vùng/điểm kết quả trên bản đồ
+  resultLayer.clearLayers();
+
+  // 3. Đưa danh sách kết quả về trạng thái ban đầu
+  const lstKetQua = document.getElementById("lstKetQua");
+  if (lstKetQua) {
+    lstKetQua.innerHTML = `
+      <div class='empty-result'>Chưa có dữ liệu. Vui lòng thực hiện truy vấn!</div>
+    `;
+  }
+
+  // 4. Reset số lượng kết quả hiện tại về con số 0
+  const txtCount = document.getElementById("txtCount");
+  if (txtCount) {
+    txtCount.innerText = "0";
+  }
+
+  // 5. Tự động chuyển về Tab "Truy vấn" để lần sau mở ra cho chuẩn
+  const tabBtns = bangTruyVan.querySelectorAll(".tab-btn");
+  if (tabBtns.length > 0) {
+    tabBtns[0].click();
+  }
+});
+
+// 2. Logic Chuyển Tab (Đã sửa lỗi không làm ảnh hưởng đến bảng Thống kê)
 const tabBtns = bangTruyVan.querySelectorAll(".tab-btn");
 const tabContents = bangTruyVan.querySelectorAll(".tab-content");
 
 tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
-    // Chỉ xóa active của các tab bên trong bảng Truy vấn, không đụng tới bảng Thống kê
+    // Chỉ xử lý các Tab bên trong bảng Truy vấn
     tabBtns.forEach((b) => b.classList.remove("active"));
     tabContents.forEach((c) => c.classList.remove("active"));
 
     btn.classList.add("active");
     const targetId = btn.getAttribute("data-target");
-    bangTruyVan.querySelector("#" + targetId).classList.add("active");
+    const targetContent = bangTruyVan.querySelector("#" + targetId);
+    if (targetContent) {
+      targetContent.classList.add("active");
+    }
   });
 });
 
