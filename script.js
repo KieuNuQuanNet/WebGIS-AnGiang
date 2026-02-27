@@ -554,6 +554,35 @@ function moFormSuaDoi(blockElement, layerName, featureId, props, layerObj) {
 }
 
 // =====================================================================
+// ===============================
+// API helper: gọi backend WFS-T (RBAC + JWT)
+// ===============================
+const API_BASE = "http://localhost:3000";
+
+function getToken() {
+  return localStorage.getItem("webgis_token");
+}
+
+async function postWFST(action, layer, xml) {
+  const token = getToken();
+  if (!token) throw new Error("Chưa đăng nhập (thiếu webgis_token)");
+
+  const res = await fetch(`${API_BASE}/api/wfst`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/xml",
+      Authorization: `Bearer ${token}`,
+      "X-Action": action, // insert | update | delete
+      "X-Layer": layer, // ví dụ: angiang:dat
+    },
+    body: xml,
+  });
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(text);
+  return text; // XML/JSON trả về từ backend/GeoServer
+}
+
 // TUYỆT KỸ WFS-T 1: GỬI LỆNH UPDATE LÊN GEOSERVER (SỬA DỮ LIỆU)
 // =====================================================================
 function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
@@ -574,15 +603,7 @@ function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
             </wfs:Update>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTx,
-  })
-    .then((r) => r.text())
+  postWFST("update", layerName, wfsTx)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi khi sửa dữ liệu! Mở F12 để xem chi tiết.");
@@ -592,6 +613,11 @@ function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
         map.closePopup();
         layerObj.setParams({ fake: Date.now() }, false);
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -608,15 +634,7 @@ function xoaDuLieuWFS(layerName, featureId, layerObj) {
             </wfs:Delete>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTx,
-  })
-    .then((r) => r.text())
+  postWFST("delete", layerName, wfsTx)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi khi xóa dữ liệu! Mở F12 để xem.");
@@ -626,6 +644,11 @@ function xoaDuLieuWFS(layerName, featureId, layerObj) {
         map.closePopup();
         layerObj.setParams({ fake: Date.now() }, false);
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1055,15 +1078,7 @@ function phongDuLieuLenGeoServer(
             </wfs:Insert>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTransaction,
-  })
-    .then((r) => r.text())
+  postWFST("insert", `${WORKSPACE}:${LAYER_NAME}`, wfsTransaction)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi Khoáng sản! F12 xem chi tiết");
@@ -1072,6 +1087,11 @@ function phongDuLieuLenGeoServer(
         alert("Đại Công Cáo Thành! Đã lưu Khoáng sản!");
         drawnItems.clearLayers();
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1101,15 +1121,7 @@ function phongDuLieuRungLenGeoServer(
             </wfs:Insert>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTransaction,
-  })
-    .then((r) => r.text())
+  postWFST("insert", `${WORKSPACE}:${LAYER_NAME}`, wfsTransaction)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi Rừng! F12 xem chi tiết");
@@ -1118,6 +1130,11 @@ function phongDuLieuRungLenGeoServer(
         alert("Đại Công Cáo Thành! Đã trồng thêm Rừng thành công!");
         drawnItems.clearLayers();
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1147,15 +1164,7 @@ function phongDuLieuDatLenGeoServer(
             </wfs:Insert>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTransaction,
-  })
-    .then((r) => r.text())
+  postWFST("insert", `${WORKSPACE}:${LAYER_NAME}`, wfsTransaction)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi Đất! F12 xem chi tiết");
@@ -1164,6 +1173,11 @@ function phongDuLieuDatLenGeoServer(
         alert("Đại Công Cáo Thành! Đã lưu vùng Đất thành công!");
         drawnItems.clearLayers();
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1184,15 +1198,7 @@ function phongDuLieuNuocLenGeoServer(chuoiToaDo, ten, loai, cap) {
             </wfs:Insert>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTransaction,
-  })
-    .then((r) => r.text())
+  postWFST("insert", `${WORKSPACE}:${LAYER_NAME}`, wfsTransaction)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi Nước! F12 xem chi tiết");
@@ -1201,6 +1207,11 @@ function phongDuLieuNuocLenGeoServer(chuoiToaDo, ten, loai, cap) {
         alert("Đại Công Cáo Thành! Đã khơi thông Thủy Mạch thành công!");
         drawnItems.clearLayers();
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1230,15 +1241,7 @@ function phongDuLieuSinhVatLenGeoServer(
             </wfs:Insert>
         </wfs:Transaction>`;
 
-  fetch("/myproxy/angiang/ows", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/xml",
-      Authorization: "Basic " + btoa("admin:geoserver"),
-    },
-    body: wfsTransaction,
-  })
-    .then((r) => r.text())
+  postWFST("insert", `${WORKSPACE}:${tenBang}`, wfsTransaction)
     .then((data) => {
       if (data.includes("Exception") || data.includes("Error")) {
         alert("Lỗi Sinh Vật! Đọc F12 xem chi tiết!");
@@ -1247,6 +1250,11 @@ function phongDuLieuSinhVatLenGeoServer(
         alert("Đại Công Cáo Thành! Đã thêm sinh vật thành công!");
         drawnItems.clearLayers();
       }
+    })
+    .catch((e) => {
+      const msg = e && e.message ? e.message : String(e);
+      alert("❌ " + msg);
+      console.error(e);
     });
 }
 
@@ -1862,35 +1870,4 @@ document.getElementById("btnMoBaoCao").addEventListener("click", () => {
 
   // 3. Mở tab mới
   window.open("baocao.html", "_blank");
-});
-// Logic kiểm tra phân quyền
-document.getElementById("frmLogin").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const u = document.getElementById("username").value.trim();
-  const p = document.getElementById("password").value.trim();
-  const btn = document.getElementById("btnSubmit");
-  const err = document.getElementById("errorMsg");
-
-  btn.innerHTML = "⏳ Đang kiểm tra...";
-  btn.style.opacity = "0.8";
-  btn.disabled = true;
-  err.style.display = "none";
-
-  setTimeout(() => {
-    btn.innerHTML = "Đăng nhập";
-    btn.style.opacity = "1";
-    btn.disabled = false;
-
-    if (u === "admin" && p === "admin123") {
-      localStorage.setItem("webgis_role", "admin");
-      localStorage.setItem("webgis_user", "Quản trị viên (Admin)");
-      window.location.href = "index.html";
-    } else if (u === "canbo" && p === "123456") {
-      localStorage.setItem("webgis_role", "canbo");
-      localStorage.setItem("webgis_user", "Cán bộ Hạt Kiểm lâm");
-      window.location.href = "index.html";
-    } else {
-      err.style.display = "block";
-    }
-  }, 800);
 });

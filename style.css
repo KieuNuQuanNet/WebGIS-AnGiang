@@ -688,54 +688,7 @@ body {
     transform: rotate(360deg);
   }
 }
-/* =========================================
-   CSS RIÊNG CHO TÍNH NĂNG THỐNG KÊ
-   ========================================= */
-.btn-stats {
-  background-color: #673ab7;
-}
-.stat-select-item {
-  padding: 12px 15px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
-  border-bottom: 1px solid #f1f1f1;
-  transition: background-color 0.2s;
-}
-.stat-select-item:hover {
-  background-color: #f3e5f5;
-  color: #673ab7;
-  font-weight: bold;
-}
 
-#panelThongKe {
-  border-top-color: #673ab7;
-}
-.stat-card {
-  background: white;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #eee;
-  margin-top: 10px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.02);
-}
-.spinner {
-  width: 35px;
-  height: 35px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #673ab7;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
 /* =========================================
    CSS CHO BÁO CÁO A4 VÀ XUẤT FILE
    ========================================= */
