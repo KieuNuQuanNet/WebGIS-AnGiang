@@ -57,11 +57,16 @@
           id="btnThemTaiNguyen"
           class="tool-btn btn-add"
           title="Thêm tài nguyên"
+          data-perm="feature.insert"
         >
           +
         </button>
         <!-- Danh sách thêm tài nguyên -->
-        <div id="danhSachTaiNguyen" class="resource-list hidden">
+        <div
+          id="danhSachTaiNguyen"
+          class="resource-list hidden"
+          data-perm="feature.insert"
+        >
           <h4>Chọn loại cần thêm:</h4>
           <ul id="danhSachLoaiTaiNguyen">
             <li
@@ -123,10 +128,15 @@
           id="btnThongKe"
           class="tool-btn btn-stats"
           title="Xem biểu đồ phân tích"
+          data-perm="stats.view"
         >
           📊
         </button>
-        <div id="danhSachThongKe" class="resource-list hidden">
+        <div
+          id="danhSachThongKe"
+          class="resource-list hidden"
+          data-perm="stats.view"
+        >
           <h4>Thống kê theo lớp:</h4>
           <ul>
             <li

@@ -564,6 +564,45 @@ const API_BASE = "http://localhost:3000";
 function getToken() {
   return localStorage.getItem("webgis_token") || "";
 }
+
+// ====== PERMISSIONS (ẩn/hiện UI theo quyền) ======
+function getPerms() {
+  try {
+    return JSON.parse(
+      localStorage.getItem("webgis_permissions") ||
+        localStorage.getItem("webgis_perms") ||
+        "[]",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function hasPerm(perm) {
+  // guest => không có token => không có quyền
+  if (!getToken()) return false;
+  return getPerms().includes(perm);
+}
+
+function applyPermUI() {
+  // Tự ẩn/hiện mọi element có data-perm
+  document.querySelectorAll("[data-perm]").forEach((el) => {
+    const p = el.getAttribute("data-perm");
+    el.style.display = hasPerm(p) ? "" : "none";
+  });
+
+  // Dọn menu/panel nếu guest
+  if (!hasPerm("feature.insert")) {
+    document.getElementById("danhSachTaiNguyen")?.classList.add("hidden");
+  }
+  if (!hasPerm("stats.view")) {
+    document.getElementById("danhSachThongKe")?.classList.add("hidden");
+    document.getElementById("panelThongKe")?.classList.add("hidden");
+  }
+}
+
+// vì script.js load cuối trang nên gọi thẳng được
+applyPermUI();
 function xmlEscape(v) {
   return String(v ?? "")
     .replace(/&/g, "&amp;")
@@ -1801,25 +1840,29 @@ uiBtnThem.addEventListener("click", () => {
 });
 
 // 4. Gắn sự kiện cho nút TRUY VẤN (🔍)
-uiBtnTruyVan.addEventListener("click", () => {
-  const dangAn = uiPanelTruyVan.classList.contains("hidden");
-  tatTatCaMenuTru("TruyVan");
-  if (dangAn) {
-    uiPanelTruyVan.classList.remove("hidden");
-  } else {
-    uiPanelTruyVan.classList.add("hidden");
+uiBtnThem.addEventListener("click", () => {
+  if (!hasPerm("feature.insert")) {
+    alert("🔒 Bạn không có quyền Thêm dữ liệu.");
+    return;
   }
+
+  const dangAn = uiPanelThem.classList.contains("hidden");
+  tatTatCaMenuTru("Them");
+  if (dangAn) uiPanelThem.classList.remove("hidden");
+  else uiPanelThem.classList.add("hidden");
 });
 
 // 5. Gắn sự kiện cho nút THỐNG KÊ (📊)
 uiBtnThongKe.addEventListener("click", () => {
+  if (!hasPerm("stats.view")) {
+    alert("🔒 Bạn không có quyền xem Thống kê.");
+    return;
+  }
+
   const dangAn = uiListThongKe.classList.contains("hidden");
   tatTatCaMenuTru("ThongKe");
-  if (dangAn) {
-    uiListThongKe.classList.remove("hidden");
-  } else {
-    uiListThongKe.classList.add("hidden");
-  }
+  if (dangAn) uiListThongKe.classList.remove("hidden");
+  else uiListThongKe.classList.add("hidden");
 });
 // Nút tắt bảng thống kê
 btnDongThongKe.addEventListener("click", () => {
