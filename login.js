@@ -1,135 +1,165 @@
-// --- LẤY CÁC PHẦN TỬ GIAO DIỆN ---
+// login.js - phiên bản giữ nguyên giao diện (không đụng CSS/HTML), chỉ sửa logic JWT/RBAC
+const API_BASE = "http://localhost:3000";
+
 const secLogin = document.getElementById("sectionLogin");
 const secRegister = document.getElementById("sectionRegister");
 const btnToRegister = document.getElementById("btnToRegister");
 const btnToLogin = document.getElementById("btnToLogin");
 
-// --- LOGIC CHUYỂN ĐỔI FORM ĐĂNG NHẬP / ĐĂNG KÝ ---
-btnToRegister.addEventListener("click", () => {
-  secLogin.classList.remove("active");
-  secRegister.classList.add("active");
+const frmLogin = document.getElementById("frmLogin");
+const frmRegister = document.getElementById("frmRegister");
+
+const errorMsg = document.getElementById("errorMsg");
+const successMsg = document.getElementById("successMsg");
+const errorRegMsg = document.getElementById("errorRegMsg");
+
+function show(el, msg) {
+  if (!el) return;
+  el.style.display = "block";
+  if (typeof msg === "string") el.innerHTML = msg;
+}
+function hide(el) {
+  if (!el) return;
+  el.style.display = "none";
+}
+
+function gotoRegister() {
+  secLogin?.classList.remove("active");
+  secRegister?.classList.add("active");
+  hide(errorMsg);
+  hide(successMsg);
+  hide(errorRegMsg);
+}
+
+function gotoLogin() {
+  secRegister?.classList.remove("active");
+  secLogin?.classList.add("active");
+  hide(errorMsg);
+  hide(successMsg);
+  hide(errorRegMsg);
+}
+
+// Nếu đã có token thì không ở lại trang login
+if (localStorage.getItem("webgis_token")) {
+  window.location.href = "index.html";
+}
+
+// Toggle
+btnToRegister?.addEventListener("click", (e) => {
+  e.preventDefault?.();
+  gotoRegister();
 });
 
-btnToLogin.addEventListener("click", () => {
-  secRegister.classList.remove("active");
-  secLogin.classList.add("active");
+btnToLogin?.addEventListener("click", (e) => {
+  e.preventDefault?.();
+  gotoLogin();
 });
 
-// --- LOGIC XỬ LÝ NÚT BẤM "ĐĂNG KÝ" (GỌI API THỰC TẾ) ---
-document
-  .getElementById("frmRegister")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const name = document.getElementById("regName").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
-    const pass = document.getElementById("regPass").value;
-    const passConfirm = document.getElementById("regPassConfirm").value;
-    const btn = document.getElementById("btnRegSubmit");
-    const msg = document.getElementById("successMsg");
-    const errMsg = document.getElementById("errorRegMsg");
+// REGISTER
+frmRegister?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hide(successMsg);
+  hide(errorRegMsg);
 
-    if (pass !== passConfirm) {
-      errMsg.innerHTML = "❌ Mật khẩu nhập lại không khớp!";
-      errMsg.style.display = "block";
-      msg.style.display = "none";
-      return;
-    }
+  const ho_ten = document.getElementById("regName")?.value.trim() || "";
+  const email = document.getElementById("regEmail")?.value.trim() || "";
+  const mat_khau = document.getElementById("regPass")?.value || "";
+  const mat_khau2 = document.getElementById("regPassConfirm")?.value || "";
+  const btn = document.getElementById("btnRegSubmit");
 
-    errMsg.style.display = "none";
+  if (mat_khau !== mat_khau2) {
+    show(errorRegMsg, "❌ Mật khẩu nhập lại không khớp!");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
     btn.innerHTML = "⏳ Đang xử lý...";
-    btn.disabled = true;
+  }
 
-    try {
-      // Gọi API Đăng ký xuống máy chủ Node.js
-      const response = await fetch("http://localhost:3000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ho_ten: name, email: email, mat_khau: pass }),
-      });
+  try {
+    const r = await fetch(`${API_BASE}/api/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ho_ten, email, mat_khau }),
+    });
 
-      const data = await response.json();
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || "Lỗi đăng ký");
 
-      if (!response.ok) {
-        throw new Error(data.message || "Lỗi đăng ký");
-      }
+    show(
+      successMsg,
+      "✅ " + (data.message || "Đăng ký thành công. Vui lòng chờ Admin duyệt."),
+    );
+    frmRegister.reset();
 
-      // Nếu thành công
-      btn.innerHTML = "Đăng ký";
+    setTimeout(() => {
+      hide(successMsg);
+      gotoLogin();
+    }, 1200);
+  } catch (err) {
+    show(errorRegMsg, "❌ " + (err.message || err));
+  } finally {
+    if (btn) {
       btn.disabled = false;
-      msg.innerHTML = "✅ " + data.message; // Sẽ hiện dòng: Vui lòng chờ Admin duyệt
-      msg.style.display = "block";
-
-      setTimeout(() => {
-        msg.style.display = "none";
-        document.getElementById("frmRegister").reset();
-        btnToLogin.click();
-      }, 2000);
-    } catch (error) {
       btn.innerHTML = "Đăng ký";
-      btn.disabled = false;
-      errMsg.innerHTML = "❌ " + error.message;
-      errMsg.style.display = "block";
     }
-  });
+  }
+});
 
-// --- LOGIC XỬ LÝ NÚT BẤM "ĐĂNG NHẬP" (GỌI API THỰC TẾ) ---
-document
-  .getElementById("frmLogin")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const u = document.getElementById("loginUser").value.trim(); // Đây chính là Email
-    const p = document.getElementById("loginPass").value.trim();
-    const btn = document.getElementById("btnLoginSubmit");
-    const err = document.getElementById("errorMsg");
+// LOGIN
+frmLogin?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hide(errorMsg);
 
+  const username = document.getElementById("loginUser")?.value.trim() || "";
+  const password = document.getElementById("loginPass")?.value || "";
+  const btn = document.getElementById("btnLoginSubmit");
+
+  if (btn) {
+    btn.disabled = true;
     btn.innerHTML = "⏳ Đang kiểm tra...";
-    btn.disabled = true;
-    err.style.display = "none";
+  }
 
-    try {
-      // Gọi API Đăng nhập xuống máy chủ Node.js
-      const response = await fetch("http://localhost:3000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: u, password: p }),
-      });
+  try {
+    const r = await fetch(`${API_BASE}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
 
-      const data = await response.json();
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || "Lỗi đăng nhập");
 
-      if (!response.ok) {
-        throw new Error(data.message || "Lỗi đăng nhập");
-      }
+    // ✅ Lưu token + roles + permissions
+    localStorage.setItem("webgis_token", data.token);
+    localStorage.setItem("webgis_roles", JSON.stringify(data.roles || []));
+    localStorage.setItem(
+      "webgis_permissions",
+      JSON.stringify(data.permissions || []),
+    );
+    localStorage.setItem(
+      "webgis_perms",
+      JSON.stringify(data.permissions || []),
+    ); // compat
+    localStorage.setItem("webgis_user", data.ho_ten || "");
 
-      // Nếu thành công, lưu thẻ bài (Role) thật từ Database vào LocalStorage
-      btn.innerHTML = "Đăng nhập";
+    // compat role cũ
+    const roles = (data.roles || []).map((x) => (x || "").toLowerCase());
+    const mainRole = roles.includes("admin")
+      ? "admin"
+      : roles.includes("can_bo")
+        ? "can_bo"
+        : "guest";
+    localStorage.setItem("webgis_role", mainRole);
+
+    window.location.href = "index.html";
+  } catch (err) {
+    show(errorMsg, "❌ " + (err.message || err));
+  } finally {
+    if (btn) {
       btn.disabled = false;
-
-      // ✅ Lưu token + roles + permissions (RBAC)
-      localStorage.setItem("webgis_token", data.token);
-
-      const roles = data.roles || [];
-      const perms = data.permissions || [];
-
-      localStorage.setItem("webgis_roles", JSON.stringify(roles));
-      localStorage.setItem("webgis_permissions", JSON.stringify(perms));
-      // compat (nếu script.js cũ đọc webgis_perms)
-      localStorage.setItem("webgis_perms", JSON.stringify(perms));
-
-      localStorage.setItem("webgis_user", data.ho_ten || "");
-
-      // ✅ Giữ key webgis_role cho tương thích code cũ
-      const mainRole = roles.includes("admin")
-        ? "admin"
-        : roles.includes("can_bo")
-          ? "can_bo"
-          : "guest";
-      localStorage.setItem("webgis_role", mainRole);
-
-      window.location.href = "index.html";
-    } catch (error) {
       btn.innerHTML = "Đăng nhập";
-      btn.disabled = false;
-      err.innerHTML = "❌ " + error.message;
-      err.style.display = "block";
     }
-  });
+  }
+});

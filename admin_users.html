@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản trị - Quản lý người dùng</title>
+    <link rel="stylesheet" href="admin_users.css" />
+    <script src="admin_users.js" defer></script>
+  </head>
+
+  <body>
+    <div class="layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-title">HỆ THỐNG WEBGIS</div>
+          <div class="brand-sub">Tài nguyên An Giang</div>
+        </div>
+
+        <nav class="side-nav">
+          <a class="side-link active" href="admin_users.html"
+            >👥 Quản lý người dùng</a
+          >
+          <a class="side-link" href="index.html">🗺️ Quay lại bản đồ</a>
+        </nav>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main">
+        <header class="topbar">
+          <h1>BẢNG ĐIỀU KHIỂN QUẢN TRỊ VIÊN</h1>
+          <div class="topbar-right">
+            <span id="helloUser" class="hello"></span>
+            <button id="btnLogout" class="btn btn-ghost">Đăng xuất</button>
+          </div>
+        </header>
+
+        <section class="stats">
+          <div class="card stat">
+            <div class="stat-num" id="totalUsers">0</div>
+            <div class="stat-label">TỔNG TÀI KHOẢN</div>
+          </div>
+
+          <div class="card stat">
+            <div class="stat-num" id="pendingUsers">0</div>
+            <div class="stat-label">ĐANG CHỜ PHÊ DUYỆT</div>
+          </div>
+        </section>
+
+        <section class="card table-card">
+          <div class="table-head">
+            <h2>DANH SÁCH TÀI KHOẢN HỆ THỐNG</h2>
+            <div class="table-actions">
+              <button id="btnReload" class="btn">🔄 Tải lại dữ liệu</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 70px">STT</th>
+                  <th>HỌ VÀ TÊN</th>
+                  <th>EMAIL (TÀI KHOẢN)</th>
+                  <th style="width: 200px">VAI TRÒ</th>
+                  <th style="width: 180px">TRẠNG THÁI</th>
+                  <th style="width: 180px">HÀNH ĐỘNG</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUsers"></tbody>
+            </table>
+          </div>
+
+          <div id="msg" class="msg"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

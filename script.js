@@ -554,58 +554,147 @@ function moFormSuaDoi(blockElement, layerName, featureId, props, layerObj) {
 }
 
 // =====================================================================
-// ===============================
-// API helper: gọi backend WFS-T (RBAC + JWT)
-// ===============================
+// TUYỆT KỸ WFS-T 1: GỬI LỆNH UPDATE LÊN GEOSERVER (SỬA DỮ LIỆU)
+// =====================================================================
+// =====================================================================
+// AUTH + WFST PROXY (JWT/RBAC)
+// =====================================================================
 const API_BASE = "http://localhost:3000";
 
 function getToken() {
-  return localStorage.getItem("webgis_token");
+  return localStorage.getItem("webgis_token") || "";
 }
-
+function xmlEscape(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
 async function postWFST(action, layer, xml) {
   const token = getToken();
-  if (!token) throw new Error("Chưa đăng nhập (thiếu webgis_token)");
+  if (!token) throw new Error("Bạn chưa đăng nhập!");
 
   const res = await fetch(`${API_BASE}/api/wfst`, {
     method: "POST",
     headers: {
-      "Content-Type": "text/xml",
+      "Content-Type": "application/xml",
       Authorization: `Bearer ${token}`,
-      "X-Action": action, // insert | update | delete
-      "X-Layer": layer, // ví dụ: angiang:dat
+      "X-Action": action, // insert|update|delete
+      "X-Layer": layer, // vd: angiang:dat
     },
     body: xml,
   });
 
   const text = await res.text();
   if (!res.ok) throw new Error(text);
-  return text; // XML/JSON trả về từ backend/GeoServer
+  return text;
 }
 
-// TUYỆT KỸ WFS-T 1: GỬI LỆNH UPDATE LÊN GEOSERVER (SỬA DỮ LIỆU)
-// =====================================================================
-function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
-  var workspace = layerName.split(":")[0];
+// Navbar: Đăng nhập ↔ Đăng xuất + Admin: Quản lý tài khoản
+(function initAuthNav() {
+  const navAuth = document.getElementById("navAuth"); // <a id="navAuth">
+  const navUser = document.getElementById("navUser"); // <span id="navUser">
+  const navAdmin = document.getElementById("navAdminUsers"); // <a id="navAdminUsers">
+  if (!navAuth) return;
 
-  var propXml = "";
-  for (var key in updatedProps) {
-    propXml += `<wfs:Property><wfs:Name>${key}</wfs:Name><wfs:Value>${updatedProps[key]}</wfs:Value></wfs:Property>`;
+  function readJSON(key, fallback) {
+    try {
+      return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+    } catch {
+      return fallback;
+    }
   }
 
-  var wfsTx = `
-        <wfs:Transaction service="WFS" version="1.0.0" xmlns:wfs="http://www.opengis.net/wfs" xmlns:ogc="http://www.opengis.net/ogc" xmlns:${workspace}="http://angiang.vn">
-            <wfs:Update typeName="${layerName}">
-                ${propXml}
-                <ogc:Filter>
-                    <ogc:FeatureId fid="${featureId}"/>
-                </ogc:Filter>
-            </wfs:Update>
-        </wfs:Transaction>`;
+  function isAdmin() {
+    const roles = readJSON("webgis_roles", []);
+    const perms = readJSON("webgis_permissions", readJSON("webgis_perms", []));
+    return roles.includes("admin") || perms.includes("admin.users");
+  }
+
+  function refresh() {
+    const token = localStorage.getItem("webgis_token");
+    const logged = !!token;
+
+    // Hiển thị tên user
+    if (navUser) {
+      if (logged) {
+        navUser.style.display = "inline";
+        navUser.textContent = `👤 ${localStorage.getItem("webgis_user") || "User"}`;
+      } else {
+        navUser.style.display = "none";
+        navUser.textContent = "";
+      }
+    }
+
+    // Link admin
+    if (navAdmin)
+      navAdmin.style.display = logged && isAdmin() ? "inline" : "none";
+
+    // Nút đăng nhập/đăng xuất
+    if (logged) {
+      navAuth.textContent = "Đăng xuất";
+      navAuth.href = "#";
+      navAuth.onclick = (e) => {
+        e.preventDefault();
+        [
+          "webgis_token",
+          "webgis_roles",
+          "webgis_permissions",
+          "webgis_perms",
+          "webgis_role",
+          "webgis_user",
+        ].forEach((k) => localStorage.removeItem(k));
+        window.location.href = "index.html";
+      };
+    } else {
+      navAuth.textContent = "Đăng nhập";
+      navAuth.href = "login.html";
+      navAuth.onclick = null;
+    }
+  }
+
+  refresh();
+})();
+
+function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
+  const workspace = layerName.split(":")[0];
+
+  // ✅ Namespace URI phải khớp Workspace trong GeoServer (và khớp INSERT của bạn)
+  // Nếu GeoServer workspace "angiang" dùng URI khác thì thay ở đây.
+  const WORKSPACE_URI = "http://angiang.vn";
+
+  let propXml = "";
+  for (const key in updatedProps) {
+    propXml += `
+      <wfs:Property>
+        <wfs:Name>${key}</wfs:Name>
+        <wfs:Value>${xmlEscape(updatedProps[key])}</wfs:Value>
+      </wfs:Property>
+    `;
+  }
+
+  const wfsTx = `
+    <wfs:Transaction service="WFS" version="1.0.0"
+      xmlns:wfs="http://www.opengis.net/wfs"
+      xmlns:ogc="http://www.opengis.net/ogc"
+      xmlns:${workspace}="${WORKSPACE_URI}">
+      <wfs:Update typeName="${layerName}">
+        ${propXml}
+        <ogc:Filter>
+          <ogc:FeatureId fid="${featureId}"/>
+        </ogc:Filter>
+      </wfs:Update>
+    </wfs:Transaction>
+  `;
 
   postWFST("update", layerName, wfsTx)
     .then((data) => {
-      if (data.includes("Exception") || data.includes("Error")) {
+      if (
+        String(data).includes("Exception") ||
+        String(data).includes("Error")
+      ) {
         alert("Lỗi khi sửa dữ liệu! Mở F12 để xem chi tiết.");
         console.log(data);
       } else {
@@ -615,8 +704,7 @@ function suaDuLieuWFS(layerName, featureId, updatedProps, layerObj) {
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Update thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -632,7 +720,8 @@ function xoaDuLieuWFS(layerName, featureId, layerObj) {
                     <ogc:FeatureId fid="${featureId}"/>
                 </ogc:Filter>
             </wfs:Delete>
-        </wfs:Transaction>`;
+        </wfs:Transaction>
+    `;
 
   postWFST("delete", layerName, wfsTx)
     .then((data) => {
@@ -646,8 +735,7 @@ function xoaDuLieuWFS(layerName, featureId, layerObj) {
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Delete thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -1089,8 +1177,7 @@ function phongDuLieuLenGeoServer(
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Insert thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -1132,8 +1219,7 @@ function phongDuLieuRungLenGeoServer(
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Insert thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -1175,8 +1261,7 @@ function phongDuLieuDatLenGeoServer(
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Insert thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -1209,8 +1294,7 @@ function phongDuLieuNuocLenGeoServer(chuoiToaDo, ten, loai, cap) {
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Insert thất bại: " + e.message);
       console.error(e);
     });
 }
@@ -1252,8 +1336,7 @@ function phongDuLieuSinhVatLenGeoServer(
       }
     })
     .catch((e) => {
-      const msg = e && e.message ? e.message : String(e);
-      alert("❌ " + msg);
+      alert("❌ Insert thất bại: " + e.message);
       console.error(e);
     });
 }
